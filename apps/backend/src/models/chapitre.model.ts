@@ -9,25 +9,31 @@ import sequelize from '../config/database.js';
 
 // Interface pour les attributs du chapitre
 interface ChapitreAttributes {
-  id: string; // UUID pour la dérivation de clé
+  id: number; // ID auto-incrémenté pour la base de données
+  uuid: string; // UUID pour la dérivation de clé de chiffrement
   titre: string; // Champ chiffré (stocké en hex)
+  slug: string; // Champ chiffré (slug généré depuis le titre, stocké en hex)
   numero: number; // Non chiffré (pour indexation/tri)
-  storyId: string; // Clé étrangère vers Story
+  storyId: number; // Clé étrangère vers Story (ID auto-incrémenté)
+  storyUuid: string; // UUID de la story pour référence
   iv: string; // IV partagé pour toute la ligne
   tag: string; // Tag GCM partagé pour toute la ligne
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-// Interface pour la création (id optionnel car généré automatiquement)
-interface ChapitreCreationAttributes extends Optional<ChapitreAttributes, 'id'> {}
+// Interface pour la création (id et uuid optionnels car générés automatiquement)
+interface ChapitreCreationAttributes extends Optional<ChapitreAttributes, 'id' | 'uuid'> {}
 
 // Interface pour les données en clair (utilisée par les services)
 interface ChapitreDecrypted {
-  id: string;
+  id: number;
+  uuid: string;
   titre: string;
+  slug: string;
   numero: number;
-  storyId: string;
+  storyId: number;
+  storyUuid: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -35,10 +41,13 @@ interface ChapitreDecrypted {
 // Définition du modèle
 class Chapitre extends Model<ChapitreAttributes, ChapitreCreationAttributes> 
   implements ChapitreAttributes {
-  public id!: string;
+  public id!: number;
+  public uuid!: string;
   public titre!: string; // Stocké chiffré
+  public slug!: string; // Stocké chiffré
   public numero!: number;
-  public storyId!: string;
+  public storyId!: number;
+  public storyUuid!: string;
   public iv!: string;
   public tag!: string;
   public readonly createdAt!: Date;
@@ -49,12 +58,22 @@ class Chapitre extends Model<ChapitreAttributes, ChapitreCreationAttributes>
 Chapitre.init(
   {
     id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    uuid: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
+      allowNull: false,
+      unique: true,
     },
     titre: {
       type: DataTypes.TEXT, // Stockage des données chiffrées en hex
+      allowNull: false,
+    },
+    slug: {
+      type: DataTypes.TEXT, // Stockage du slug chiffré en hex
       allowNull: false,
     },
     numero: {
@@ -65,19 +84,23 @@ Chapitre.init(
       },
     },
     storyId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'stories',
         key: 'id',
       },
     },
+    storyUuid: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
     iv: {
-      type: DataTypes.STRING(24), // 12 bytes en hex = 24 caractères
+      type: DataTypes.TEXT, // IV hex (ou concaténation future) séparé par ':'
       allowNull: false,
     },
     tag: {
-      type: DataTypes.STRING(32), // 16 bytes en hex = 32 caractères
+      type: DataTypes.TEXT, // tag hex (ou concaténation future) séparé par ':'
       allowNull: false,
     },
   },

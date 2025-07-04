@@ -6,12 +6,16 @@ const router = Router();
 
 // Routes pour les chapitres
 router.get('/', ChapitreController.getAllChapitres);
+// Routes spécifiques (doivent être avant /:id)
+router.get('/uuid/:uuid', ChapitreController.getChapitreByUuid);
+router.get('/identifier/:identifier', ChapitreController.getChapitreByIdOrUuidOrSlug);
 router.get('/:id', ChapitreController.getChapitreById);
 router.post('/', ChapitreController.createChapitre);
 router.put('/:id', ChapitreController.updateChapitre);
 router.delete('/:id', ChapitreController.deleteChapitre);
 
-// Route pour les morceaux de texte d'un chapitre
+// Routes pour les morceaux de texte d'un chapitre
 router.get('/:chapitreId/morceaux-texte', MorceauTexteController.getMorceauxTexteByChapitreId);
+router.get('/uuid/:chapitreUuid/morceaux-texte', MorceauTexteController.getMorceauxTexteByChapitreUuid);
 
 export default router; 

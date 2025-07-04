@@ -17,7 +17,52 @@ export class StoryController {
   public static async getStoryById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const story = await StoryService.getStoryById(id);
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
+      const story = await StoryService.getStoryById(numericId);
+      
+      if (!story) {
+        return res.status(404).json({ error: 'Story non trouvée' });
+      }
+      
+      res.json(story);
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la story:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
+  // GET /api/stories/uuid/:uuid
+  public static async getStoryByUuid(req: Request, res: Response) {
+    try {
+      const { uuid } = req.params;
+      const story = await StoryService.getStoryByUuid(uuid);
+      
+      if (!story) {
+        return res.status(404).json({ error: 'Story non trouvée' });
+      }
+      
+      res.json(story);
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la story:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
+  // GET /api/stories/identifier/:identifier - Récupère par ID, UUID ou slug
+  public static async getStoryByIdOrUuidOrSlug(req: Request, res: Response) {
+    try {
+      const { identifier } = req.params;
+      
+      // Essayer de convertir en nombre si possible
+      const numericId = parseInt(identifier, 10);
+      const searchIdentifier = isNaN(numericId) ? identifier : numericId;
+      
+      const story = await StoryService.getStoryByIdOrUuidOrSlug(searchIdentifier);
       
       if (!story) {
         return res.status(404).json({ error: 'Story non trouvée' });
@@ -84,13 +129,19 @@ export class StoryController {
   public static async updateStory(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
       const { titre, description, auteur, statut } = req.body;
       
       if (statut && !['brouillon', 'en_cours', 'terminee', 'publiee'].includes(statut)) {
         return res.status(400).json({ error: 'Statut invalide' });
       }
       
-      const story = await StoryService.updateStory(id, { titre, description, auteur, statut });
+      const story = await StoryService.updateStory(numericId, { titre, description, auteur, statut });
       
       if (!story) {
         return res.status(404).json({ error: 'Story non trouvée' });
@@ -107,7 +158,13 @@ export class StoryController {
   public static async deleteStory(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const success = await StoryService.deleteStory(id);
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
+      const success = await StoryService.deleteStory(numericId);
       
       if (!success) {
         return res.status(404).json({ error: 'Story non trouvée' });

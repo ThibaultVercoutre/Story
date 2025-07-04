@@ -17,7 +17,13 @@ export class ChapitreController {
   public static async getChapitreById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const chapitre = await ChapitreService.getChapitreById(id);
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
+      const chapitre = await ChapitreService.getChapitreById(numericId);
       
       if (!chapitre) {
         return res.status(404).json({ error: 'Chapitre non trouvé' });
@@ -30,16 +36,95 @@ export class ChapitreController {
     }
   }
 
+  // GET /api/chapitres/uuid/:uuid
+  public static async getChapitreByUuid(req: Request, res: Response) {
+    try {
+      const { uuid } = req.params;
+      const chapitre = await ChapitreService.getChapitreByUuid(uuid);
+      
+      if (!chapitre) {
+        return res.status(404).json({ error: 'Chapitre non trouvé' });
+      }
+      
+      res.json(chapitre);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du chapitre:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
+  // GET /api/chapitres/identifier/:identifier - Récupère par ID, UUID ou slug
+  public static async getChapitreByIdOrUuidOrSlug(req: Request, res: Response) {
+    try {
+      const { identifier } = req.params;
+      
+      // Essayer de convertir en nombre si possible
+      const numericId = parseInt(identifier, 10);
+      const searchIdentifier = isNaN(numericId) ? identifier : numericId;
+      
+      const chapitre = await ChapitreService.getChapitreByIdOrUuidOrSlug(searchIdentifier);
+      
+      if (!chapitre) {
+        return res.status(404).json({ error: 'Chapitre non trouvé' });
+      }
+      
+      res.json(chapitre);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du chapitre:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
+  // GET /api/stories/:storyId/chapitres - Récupère les chapitres d'une story par ID
+  public static async getChapitresByStoryId(req: Request, res: Response) {
+    try {
+      const { storyId } = req.params;
+      const numericStoryId = parseInt(storyId, 10);
+      
+      if (isNaN(numericStoryId)) {
+        return res.status(400).json({ error: 'ID de story invalide' });
+      }
+      
+      const chapitres = await ChapitreService.getChapitresByStoryId(numericStoryId);
+      res.json(chapitres);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des chapitres de la story:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
+  // GET /api/stories/uuid/:storyUuid/chapitres - Récupère les chapitres d'une story par UUID
+  public static async getChapitresByStoryUuid(req: Request, res: Response) {
+    try {
+      const { storyUuid } = req.params;
+      const chapitres = await ChapitreService.getChapitresByStoryUuid(storyUuid);
+      res.json(chapitres);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des chapitres de la story:', error);
+      res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+  }
+
   // POST /api/chapitres
   public static async createChapitre(req: Request, res: Response) {
     try {
-      const { titre, numero } = req.body;
+      const { titre, numero, storyId, storyUuid } = req.body;
       
-      if (!titre || !numero) {
-        return res.status(400).json({ error: 'Titre et numéro sont requis' });
+      if (!titre || !numero || !storyId || !storyUuid) {
+        return res.status(400).json({ error: 'Titre, numéro, storyId et storyUuid sont requis' });
       }
       
-      const chapitre = await ChapitreService.createChapitre({ titre, numero });
+      const numericStoryId = parseInt(storyId, 10);
+      if (isNaN(numericStoryId)) {
+        return res.status(400).json({ error: 'storyId doit être un nombre' });
+      }
+      
+      const chapitre = await ChapitreService.createChapitre({ 
+        titre, 
+        numero, 
+        storyId: numericStoryId, 
+        storyUuid 
+      });
       res.status(201).json(chapitre);
     } catch (error) {
       console.error('Erreur lors de la création du chapitre:', error);
@@ -51,9 +136,28 @@ export class ChapitreController {
   public static async updateChapitre(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { titre, numero } = req.body;
+      const numericId = parseInt(id, 10);
       
-      const chapitre = await ChapitreService.updateChapitre(id, { titre, numero });
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
+      const { titre, numero, storyId, storyUuid } = req.body;
+      
+      let numericStoryId: number | undefined;
+      if (storyId !== undefined) {
+        numericStoryId = parseInt(storyId, 10);
+        if (isNaN(numericStoryId)) {
+          return res.status(400).json({ error: 'storyId doit être un nombre' });
+        }
+      }
+      
+      const chapitre = await ChapitreService.updateChapitre(numericId, { 
+        titre, 
+        numero, 
+        storyId: numericStoryId, 
+        storyUuid 
+      });
       
       if (!chapitre) {
         return res.status(404).json({ error: 'Chapitre non trouvé' });
@@ -70,7 +174,13 @@ export class ChapitreController {
   public static async deleteChapitre(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const success = await ChapitreService.deleteChapitre(id);
+      const numericId = parseInt(id, 10);
+      
+      if (isNaN(numericId)) {
+        return res.status(400).json({ error: 'ID invalide' });
+      }
+      
+      const success = await ChapitreService.deleteChapitre(numericId);
       
       if (!success) {
         return res.status(404).json({ error: 'Chapitre non trouvé' });

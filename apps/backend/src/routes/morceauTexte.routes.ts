@@ -4,7 +4,7 @@ import { MorceauTexteController } from '../controllers/morceauTexte.controller.j
 const router = Router();
 
 // Routes pour les morceaux de texte
-router.get('/', MorceauTexteController.getMorceauxTexteByChapitreId); // Sera utilisé avec /api/chapitres/:chapitreId/morceaux-texte
+router.get('/uuid/:uuid', MorceauTexteController.getMorceauTexteByUuid);
 router.get('/:id', MorceauTexteController.getMorceauTexteById);
 router.post('/', MorceauTexteController.createMorceauTexte);
 router.put('/:id', MorceauTexteController.updateMorceauTexte);

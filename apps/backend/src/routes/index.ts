@@ -2,6 +2,7 @@ import { Router } from 'express';
 import chapitreRoutes from './chapitre.routes.js';
 import morceauTexteRoutes from './morceauTexte.routes.js';
 import storyRoutes from './story.routes.js';
+import { ChapitreController } from '../controllers/chapitre.controller.js';
 
 const router = Router();
 
@@ -19,11 +20,9 @@ router.use('/chapitres', chapitreRoutes);
 // Routes des morceaux de texte
 router.use('/morceaux-texte', morceauTexteRoutes);
 
-// Route pour les chapitres d'une story spécifique
-router.use('/stories/:storyId/chapitres', (req, res, next) => {
-  req.params.storyId = req.params.storyId;
-  next();
-}, chapitreRoutes);
+// Routes pour les chapitres d'une story spécifique
+router.get('/stories/:storyId/chapitres', ChapitreController.getChapitresByStoryId);
+router.get('/stories/uuid/:storyUuid/chapitres', ChapitreController.getChapitresByStoryUuid);
 
 // Route pour les morceaux de texte d'un chapitre spécifique
 router.use('/chapitres/:chapitreId/morceaux-texte', (req, res, next) => {

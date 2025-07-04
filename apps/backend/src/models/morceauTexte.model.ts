@@ -10,8 +10,10 @@ export enum TypeMorceauTexte {
 
 // Interface pour les attributs du morceau de texte
 interface MorceauTexteAttributes {
-  id: string; // UUID pour la dérivation de clé
-  chapitreId: string; // Référence au chapitre
+  id: number; // ID auto-incrémenté pour la base de données
+  uuid: string; // UUID pour la dérivation de clé de chiffrement
+  chapitreId: number; // Référence au chapitre (ID auto-incrémenté)
+  chapitreUuid: string; // UUID du chapitre pour référence
   type: TypeMorceauTexte; // Type de morceau (paragraphe, citation, dialogue)
   contenu: string; // Contenu chiffré (stocké en hex)
   ordre: number; // Ordre dans le chapitre (non chiffré pour tri)
@@ -21,14 +23,16 @@ interface MorceauTexteAttributes {
   updatedAt?: Date;
 }
 
-// Interface pour la création (id optionnel car généré automatiquement)
-interface MorceauTexteCreationAttributes extends Optional<MorceauTexteAttributes, 'id'> {}
+// Interface pour la création (id et uuid optionnels car générés automatiquement)
+interface MorceauTexteCreationAttributes extends Optional<MorceauTexteAttributes, 'id' | 'uuid'> {}
 
 // Définition du modèle
 class MorceauTexte extends Model<MorceauTexteAttributes, MorceauTexteCreationAttributes> 
   implements MorceauTexteAttributes {
-  public id!: string;
-  public chapitreId!: string;
+  public id!: number;
+  public uuid!: string;
+  public chapitreId!: number;
+  public chapitreUuid!: string;
   public type!: TypeMorceauTexte;
   public contenu!: string; // Stocké chiffré
   public ordre!: number;
@@ -42,17 +46,27 @@ class MorceauTexte extends Model<MorceauTexteAttributes, MorceauTexteCreationAtt
 MorceauTexte.init(
   {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
-    chapitreId: {
+    uuid: {
       type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      allowNull: false,
+      unique: true,
+    },
+    chapitreId: {
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'chapitres',
         key: 'id',
       },
+    },
+    chapitreUuid: {
+      type: DataTypes.UUID,
+      allowNull: false,
     },
     type: {
       type: DataTypes.ENUM(...Object.values(TypeMorceauTexte)),
@@ -70,11 +84,11 @@ MorceauTexte.init(
       },
     },
     iv: {
-      type: DataTypes.STRING(24), // 12 bytes en hex = 24 caractères
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     tag: {
-      type: DataTypes.STRING(32), // 16 bytes en hex = 32 caractères
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

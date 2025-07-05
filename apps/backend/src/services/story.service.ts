@@ -7,6 +7,7 @@ export interface StoryInput {
   description?: string;
   auteur: string;
   statut?: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
+  userId: number;
 }
 
 export interface StoryOutput {
@@ -17,11 +18,40 @@ export interface StoryOutput {
   description?: string;
   auteur: string;
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
+  userId: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Interface pour les champs chiffrés de Story
+interface StoryEncryptedFields {
+  titre: string;
+  slug: string;
+  description?: string;
+  auteur: string;
+}
+
 export class StoryService {
+  // Configuration centralisée des champs chiffrés
+  private static readonly ENCRYPTED_FIELDS_CONFIG = {
+    titre: {
+      fromInput: (data: StoryInput) => data.titre,
+      fromModel: (model: Story) => model.titre
+    },
+    slug: {
+      fromInput: (data: StoryInput) => this.generateSlug(data.titre),
+      fromModel: (model: Story) => model.slug
+    },
+    description: {
+      fromInput: (data: StoryInput) => data.description,
+      fromModel: (model: Story) => model.description
+    },
+    auteur: {
+      fromInput: (data: StoryInput) => data.auteur || 'Auteur Inconnu',
+      fromModel: (model: Story) => model.auteur || 'Auteur Inconnu'
+    }
+  } as const;
+
   // Fonction utilitaire pour générer un slug depuis un titre
   private static generateSlug(titre: string): string {
     return titre
@@ -34,6 +64,47 @@ export class StoryService {
       .replace(/-+/g, '-'); // Évite les tirets multiples
   }
 
+  // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
+  private static getFieldsToDecrypt(story: Story): StoryEncryptedFields {
+    const fields = {} as StoryEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromModel(story);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction générique pour extraire les champs à chiffrer depuis les données d'entrée
+  private static getFieldsToEncrypt(data: StoryInput): StoryEncryptedFields {
+    const fields = {} as StoryEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromInput(data);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction utilitaire pour convertir les champs chiffrés vers Record<string, string>
+  private static fieldsToRecord(fields: StoryEncryptedFields): Record<string, string> {
+    const record: Record<string, string> = {};
+    
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        record[key] = value;
+      }
+    }
+    
+    return record;
+  }
+
   // Récupérer toutes les stories
   public static async getAllStories(): Promise<StoryOutput[]> {
     const stories = await Story.findAll({
@@ -41,13 +112,11 @@ export class StoryService {
     });
 
     return stories.map((story: InstanceType<typeof Story>) => {
-      const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-      if (story.description) {
-        fieldsToDecrypt.description = story.description;
-      }
+      const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
       const decryptedData = EncryptionService.decryptRowData(
-        fieldsToDecrypt,
+        fieldsRecord,
         story.uuid,
         story.iv,
         story.tag
@@ -59,8 +128,9 @@ export class StoryService {
         titre: decryptedData.titre,
         slug: decryptedData.slug,
         description: decryptedData.description,
-        auteur: story.auteur,
+        auteur: decryptedData.auteur,
         statut: story.statut,
+        userId: story.userId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
       };
@@ -75,13 +145,11 @@ export class StoryService {
       return null;
     }
 
-    const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-    if (story.description) {
-      fieldsToDecrypt.description = story.description;
-    }
+    const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+    const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
     const decryptedData = EncryptionService.decryptRowData(
-      fieldsToDecrypt,
+      fieldsRecord,
       story.uuid,
       story.iv,
       story.tag
@@ -93,8 +161,9 @@ export class StoryService {
       titre: decryptedData.titre,
       slug: decryptedData.slug,
       description: decryptedData.description,
-      auteur: story.auteur,
+      auteur: decryptedData.auteur,
       statut: story.statut,
+      userId: story.userId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -108,13 +177,11 @@ export class StoryService {
       return null;
     }
 
-    const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-    if (story.description) {
-      fieldsToDecrypt.description = story.description;
-    }
+    const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+    const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
     const decryptedData = EncryptionService.decryptRowData(
-      fieldsToDecrypt,
+      fieldsRecord,
       story.uuid,
       story.iv,
       story.tag
@@ -126,8 +193,9 @@ export class StoryService {
       titre: decryptedData.titre,
       slug: decryptedData.slug,
       description: decryptedData.description,
-      auteur: story.auteur,
+      auteur: decryptedData.auteur,
       statut: story.statut,
+      userId: story.userId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -139,13 +207,11 @@ export class StoryService {
     
     for (const story of stories) {
       try {
-        const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-        if (story.description) {
-          fieldsToDecrypt.description = story.description;
-        }
+        const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+        const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
         const decryptedData = EncryptionService.decryptRowData(
-          fieldsToDecrypt,
+          fieldsRecord,
           story.uuid,
           story.iv,
           story.tag
@@ -158,8 +224,9 @@ export class StoryService {
             titre: decryptedData.titre,
             slug: decryptedData.slug,
             description: decryptedData.description,
-            auteur: story.auteur,
+            auteur: decryptedData.auteur,
             statut: story.statut,
+            userId: story.userId,
             createdAt: story.createdAt,
             updatedAt: story.updatedAt,
           };
@@ -197,13 +264,11 @@ export class StoryService {
     });
 
     return stories.map((story: InstanceType<typeof Story>) => {
-      const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-      if (story.description) {
-        fieldsToDecrypt.description = story.description;
-      }
+      const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
       const decryptedData = EncryptionService.decryptRowData(
-        fieldsToDecrypt,
+        fieldsRecord,
         story.uuid,
         story.iv,
         story.tag
@@ -215,8 +280,9 @@ export class StoryService {
         titre: decryptedData.titre,
         slug: decryptedData.slug,
         description: decryptedData.description,
-        auteur: story.auteur,
+        auteur: decryptedData.auteur,
         statut: story.statut,
+        userId: story.userId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
       };
@@ -231,13 +297,11 @@ export class StoryService {
     });
 
     return stories.map((story: InstanceType<typeof Story>) => {
-      const fieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-      if (story.description) {
-        fieldsToDecrypt.description = story.description;
-      }
+      const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
 
       const decryptedData = EncryptionService.decryptRowData(
-        fieldsToDecrypt,
+        fieldsRecord,
         story.uuid,
         story.iv,
         story.tag
@@ -249,8 +313,9 @@ export class StoryService {
         titre: decryptedData.titre,
         slug: decryptedData.slug,
         description: decryptedData.description,
-        auteur: story.auteur,
+        auteur: decryptedData.auteur,
         statut: story.statut,
+        userId: story.userId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
       };
@@ -260,15 +325,11 @@ export class StoryService {
   // Créer une nouvelle story
   public static async createStory(data: StoryInput): Promise<StoryOutput> {
     const uuid = uuidv4();
-    const slug = this.generateSlug(data.titre);
-    
-    const fieldsToEncrypt: Record<string, string> = { titre: data.titre, slug };
-    if (data.description) {
-      fieldsToEncrypt.description = data.description;
-    }
+    const fieldsToEncrypt = this.getFieldsToEncrypt(data);
+    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
 
     const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
-      fieldsToEncrypt,
+      fieldsRecord,
       uuid
     );
 
@@ -277,20 +338,24 @@ export class StoryService {
       titre: encryptedData.titre,
       slug: encryptedData.slug,
       description: encryptedData.description,
-      auteur: data.auteur,
+      auteur: encryptedData.auteur,
       statut: data.statut || 'brouillon',
       iv,
       tag,
+      userId: data.userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     return {
       id: story.id,
       uuid: story.uuid,
-      titre: data.titre,
-      slug: slug,
-      description: data.description,
-      auteur: story.auteur,
+      titre: fieldsToEncrypt.titre,
+      slug: fieldsToEncrypt.slug,
+      description: fieldsToEncrypt.description,
+      auteur: fieldsToEncrypt.auteur,
       statut: story.statut,
+      userId: story.userId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -305,30 +370,30 @@ export class StoryService {
     }
 
     // Déchiffrer les données actuelles
-    const currentFieldsToDecrypt: Record<string, string> = { titre: story.titre, slug: story.slug };
-    if (story.description) {
-      currentFieldsToDecrypt.description = story.description;
-    }
+    const currentFieldsToDecrypt = this.getFieldsToDecrypt(story);
+    const currentFieldsRecord = this.fieldsToRecord(currentFieldsToDecrypt);
 
     const currentDecryptedData = EncryptionService.decryptRowData(
-      currentFieldsToDecrypt,
+      currentFieldsRecord,
       story.uuid,
       story.iv,
       story.tag
     );
 
     // Préparer les nouvelles données
-    const newTitre = data.titre || currentDecryptedData.titre;
-    const newSlug = data.titre ? this.generateSlug(data.titre) : currentDecryptedData.slug;
-    const newDescription = data.description !== undefined ? data.description : currentDecryptedData.description;
+    const newData: StoryInput = {
+      titre: data.titre || currentDecryptedData.titre,
+      description: data.description !== undefined ? data.description : currentDecryptedData.description,
+      auteur: data.auteur || currentDecryptedData.auteur,
+      statut: data.statut || story.statut,
+      userId: story.userId
+    };
 
-    const fieldsToEncrypt: Record<string, string> = { titre: newTitre, slug: newSlug };
-    if (newDescription) {
-      fieldsToEncrypt.description = newDescription;
-    }
+    const fieldsToEncrypt = this.getFieldsToEncrypt(newData);
+    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
 
     const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
-      fieldsToEncrypt,
+      fieldsRecord,
       story.uuid
     );
 
@@ -337,8 +402,8 @@ export class StoryService {
       titre: encryptedData.titre,
       slug: encryptedData.slug,
       description: encryptedData.description,
-      auteur: data.auteur || story.auteur,
-      statut: data.statut || story.statut,
+      auteur: encryptedData.auteur,
+      statut: newData.statut,
       iv,
       tag,
     });
@@ -346,11 +411,12 @@ export class StoryService {
     return {
       id: story.id,
       uuid: story.uuid,
-      titre: newTitre,
-      slug: newSlug,
-      description: newDescription,
-      auteur: story.auteur,
+      titre: fieldsToEncrypt.titre,
+      slug: fieldsToEncrypt.slug,
+      description: fieldsToEncrypt.description,
+      auteur: fieldsToEncrypt.auteur,
       statut: story.statut,
+      userId: story.userId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };

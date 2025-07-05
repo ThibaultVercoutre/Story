@@ -21,18 +21,6 @@ export class MorceauTexteController {
     }
   }
 
-  // GET /api/chapitres/uuid/:chapitreUuid/morceaux-texte - Par UUID de chapitre
-  public static async getMorceauxTexteByChapitreUuid(req: Request, res: Response) {
-    try {
-      const { chapitreUuid } = req.params;
-      const morceaux = await MorceauTexteService.getMorceauxTexteByChapitreUuid(chapitreUuid);
-      res.json(morceaux);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des morceaux de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
-    }
-  }
-
   // GET /api/morceaux-texte/:id
   public static async getMorceauTexteById(req: Request, res: Response) {
     try {
@@ -76,11 +64,11 @@ export class MorceauTexteController {
   // POST /api/morceaux-texte
   public static async createMorceauTexte(req: Request, res: Response) {
     try {
-      const { chapitreId, chapitreUuid, type, contenu, ordre } = req.body;
+      const { chapitreId, type, contenu, ordre } = req.body;
       
-      if (!chapitreId || !chapitreUuid || !type || !contenu || !ordre) {
+      if (!chapitreId || !type || !contenu || !ordre) {
         return res.status(400).json({ 
-          error: 'ChapitreId, chapitreUuid, type, contenu et ordre sont requis' 
+          error: 'ChapitreId, type, contenu et ordre sont requis' 
         });
       }
       
@@ -97,7 +85,6 @@ export class MorceauTexteController {
       
       const morceau = await MorceauTexteService.createMorceauTexte({
         chapitreId: numericChapitreId,
-        chapitreUuid,
         type,
         contenu,
         ordre
@@ -120,7 +107,7 @@ export class MorceauTexteController {
         return res.status(400).json({ error: 'ID invalide' });
       }
       
-      const { chapitreId, chapitreUuid, type, contenu, ordre } = req.body;
+      const { chapitreId, type, contenu, ordre } = req.body;
       
       let numericChapitreId: number | undefined;
       if (chapitreId !== undefined) {
@@ -138,7 +125,6 @@ export class MorceauTexteController {
       
       const morceau = await MorceauTexteService.updateMorceauTexte(numericId, {
         chapitreId: numericChapitreId,
-        chapitreUuid,
         type,
         contenu,
         ordre

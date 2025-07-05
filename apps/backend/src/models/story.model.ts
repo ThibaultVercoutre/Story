@@ -12,6 +12,7 @@ interface StoryAttributes {
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee'; // Non chiffré
   iv: string; // IV partagé pour toute la ligne
   tag: string; // Tag GCM partagé pour toute la ligne
+  userId: number; // ID de l'utilisateur
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -44,6 +45,7 @@ class Story extends Model<StoryAttributes, StoryCreationAttributes>
   public statut!: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   public iv!: string;
   public tag!: string;
+  public userId!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -90,6 +92,14 @@ Story.init(
     tag: {
       type: DataTypes.TEXT, // concaténation de plusieurs tags hex séparés par ':'
       allowNull: false,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
     },
   },
   {

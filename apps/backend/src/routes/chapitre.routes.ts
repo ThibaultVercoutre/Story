@@ -16,6 +16,5 @@ router.delete('/:id', ChapitreController.deleteChapitre);
 
 // Routes pour les morceaux de texte d'un chapitre
 router.get('/:chapitreId/morceaux-texte', MorceauTexteController.getMorceauxTexteByChapitreId);
-router.get('/uuid/:chapitreUuid/morceaux-texte', MorceauTexteController.getMorceauxTexteByChapitreUuid);
 
 export default router; 

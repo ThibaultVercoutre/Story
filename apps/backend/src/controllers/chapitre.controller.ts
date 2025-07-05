@@ -93,25 +93,13 @@ export class ChapitreController {
     }
   }
 
-  // GET /api/stories/uuid/:storyUuid/chapitres - Récupère les chapitres d'une story par UUID
-  public static async getChapitresByStoryUuid(req: Request, res: Response) {
-    try {
-      const { storyUuid } = req.params;
-      const chapitres = await ChapitreService.getChapitresByStoryUuid(storyUuid);
-      res.json(chapitres);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des chapitres de la story:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
-    }
-  }
-
   // POST /api/chapitres
   public static async createChapitre(req: Request, res: Response) {
     try {
-      const { titre, numero, storyId, storyUuid } = req.body;
+      const { titre, numero, storyId } = req.body;
       
-      if (!titre || !numero || !storyId || !storyUuid) {
-        return res.status(400).json({ error: 'Titre, numéro, storyId et storyUuid sont requis' });
+      if (!titre || !numero || !storyId) {
+        return res.status(400).json({ error: 'Titre, numéro et storyId sont requis' });
       }
       
       const numericStoryId = parseInt(storyId, 10);
@@ -122,8 +110,7 @@ export class ChapitreController {
       const chapitre = await ChapitreService.createChapitre({ 
         titre, 
         numero, 
-        storyId: numericStoryId, 
-        storyUuid 
+        storyId: numericStoryId
       });
       res.status(201).json(chapitre);
     } catch (error) {
@@ -142,7 +129,7 @@ export class ChapitreController {
         return res.status(400).json({ error: 'ID invalide' });
       }
       
-      const { titre, numero, storyId, storyUuid } = req.body;
+      const { titre, numero, storyId } = req.body;
       
       let numericStoryId: number | undefined;
       if (storyId !== undefined) {
@@ -155,8 +142,7 @@ export class ChapitreController {
       const chapitre = await ChapitreService.updateChapitre(numericId, { 
         titre, 
         numero, 
-        storyId: numericStoryId, 
-        storyUuid 
+        storyId: numericStoryId
       });
       
       if (!chapitre) {

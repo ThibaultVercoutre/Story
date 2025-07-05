@@ -13,7 +13,6 @@ interface MorceauTexteAttributes {
   id: number; // ID auto-incrémenté pour la base de données
   uuid: string; // UUID pour la dérivation de clé de chiffrement
   chapitreId: number; // Référence au chapitre (ID auto-incrémenté)
-  chapitreUuid: string; // UUID du chapitre pour référence
   type: TypeMorceauTexte; // Type de morceau (paragraphe, citation, dialogue)
   contenu: string; // Contenu chiffré (stocké en hex)
   ordre: number; // Ordre dans le chapitre (non chiffré pour tri)
@@ -32,7 +31,6 @@ class MorceauTexte extends Model<MorceauTexteAttributes, MorceauTexteCreationAtt
   public id!: number;
   public uuid!: string;
   public chapitreId!: number;
-  public chapitreUuid!: string;
   public type!: TypeMorceauTexte;
   public contenu!: string; // Stocké chiffré
   public ordre!: number;
@@ -63,10 +61,6 @@ MorceauTexte.init(
         model: 'chapitres',
         key: 'id',
       },
-    },
-    chapitreUuid: {
-      type: DataTypes.UUID,
-      allowNull: false,
     },
     type: {
       type: DataTypes.ENUM(...Object.values(TypeMorceauTexte)),

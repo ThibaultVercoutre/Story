@@ -7,7 +7,7 @@
         color="neutral"
         leading-icon="i-heroicons-arrow-left"
         @click="router.back()"
-        class="mb-4"
+        class="mb-4 cursor-pointer"
       >
         Retour
       </UButton>
@@ -129,6 +129,7 @@
                     variant="ghost" 
                     size="sm"
                     trailing-icon="i-heroicons-arrow-right"
+                    class="cursor-pointer"
                   >
                     Lire
                   </UButton>

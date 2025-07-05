@@ -6,7 +6,6 @@ export interface ChapitreInput {
   titre: string;
   numero: number;
   storyId: number;
-  storyUuid: string;
 }
 
 export interface ChapitreOutput {
@@ -16,12 +15,29 @@ export interface ChapitreOutput {
   slug: string;
   numero: number;
   storyId: number;
-  storyUuid: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Interface pour les champs chiffrés de Chapitre
+interface ChapitreEncryptedFields {
+  titre: string;
+  slug: string;
+}
+
 export class ChapitreService {
+  // Configuration centralisée des champs chiffrés
+  private static readonly ENCRYPTED_FIELDS_CONFIG = {
+    titre: {
+      fromInput: (data: ChapitreInput) => data.titre,
+      fromModel: (model: Chapitre) => model.titre
+    },
+    slug: {
+      fromInput: (data: ChapitreInput) => this.generateSlug(data.titre),
+      fromModel: (model: Chapitre) => model.slug
+    }
+  } as const;
+
   // Fonction utilitaire pour générer un slug depuis un titre
   private static generateSlug(titre: string): string {
     return titre
@@ -34,6 +50,47 @@ export class ChapitreService {
       .replace(/-+/g, '-'); // Évite les tirets multiples
   }
 
+  // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
+  private static getFieldsToDecrypt(chapitre: Chapitre): ChapitreEncryptedFields {
+    const fields = {} as ChapitreEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromModel(chapitre);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction générique pour extraire les champs à chiffrer depuis les données d'entrée
+  private static getFieldsToEncrypt(data: ChapitreInput): ChapitreEncryptedFields {
+    const fields = {} as ChapitreEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromInput(data);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction utilitaire pour convertir les champs chiffrés vers Record<string, string>
+  private static fieldsToRecord(fields: ChapitreEncryptedFields): Record<string, string> {
+    const record: Record<string, string> = {};
+    
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        record[key] = value;
+      }
+    }
+    
+    return record;
+  }
+
   // Récupérer tous les chapitres
   public static async getAllChapitres(): Promise<ChapitreOutput[]> {
     const chapitres = await Chapitre.findAll({
@@ -41,8 +98,11 @@ export class ChapitreService {
     });
 
     return chapitres.map(chapitre => {
+      const fieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
       const decryptedData = EncryptionService.decryptRowData(
-        { titre: chapitre.titre, slug: chapitre.slug },
+        fieldsRecord,
         chapitre.uuid,
         chapitre.iv,
         chapitre.tag
@@ -55,7 +115,6 @@ export class ChapitreService {
         slug: decryptedData.slug,
         numero: chapitre.numero,
         storyId: chapitre.storyId,
-        storyUuid: chapitre.storyUuid,
         createdAt: chapitre.createdAt,
         updatedAt: chapitre.updatedAt,
       };
@@ -70,8 +129,11 @@ export class ChapitreService {
       return null;
     }
 
+    const fieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+    const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
     const decryptedData = EncryptionService.decryptRowData(
-      { titre: chapitre.titre, slug: chapitre.slug },
+      fieldsRecord,
       chapitre.uuid,
       chapitre.iv,
       chapitre.tag
@@ -84,7 +146,6 @@ export class ChapitreService {
       slug: decryptedData.slug,
       numero: chapitre.numero,
       storyId: chapitre.storyId,
-      storyUuid: chapitre.storyUuid,
       createdAt: chapitre.createdAt,
       updatedAt: chapitre.updatedAt,
     };
@@ -98,8 +159,11 @@ export class ChapitreService {
       return null;
     }
 
+    const fieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+    const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
     const decryptedData = EncryptionService.decryptRowData(
-      { titre: chapitre.titre, slug: chapitre.slug },
+      fieldsRecord,
       chapitre.uuid,
       chapitre.iv,
       chapitre.tag
@@ -112,7 +176,6 @@ export class ChapitreService {
       slug: decryptedData.slug,
       numero: chapitre.numero,
       storyId: chapitre.storyId,
-      storyUuid: chapitre.storyUuid,
       createdAt: chapitre.createdAt,
       updatedAt: chapitre.updatedAt,
     };
@@ -124,8 +187,11 @@ export class ChapitreService {
     
     for (const chapitre of chapitres) {
       try {
+        const fieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+        const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
         const decryptedData = EncryptionService.decryptRowData(
-          { titre: chapitre.titre, slug: chapitre.slug },
+          fieldsRecord,
           chapitre.uuid,
           chapitre.iv,
           chapitre.tag
@@ -139,7 +205,6 @@ export class ChapitreService {
             slug: decryptedData.slug,
             numero: chapitre.numero,
             storyId: chapitre.storyId,
-            storyUuid: chapitre.storyUuid,
             createdAt: chapitre.createdAt,
             updatedAt: chapitre.updatedAt,
           };
@@ -177,8 +242,11 @@ export class ChapitreService {
     });
 
     return chapitres.map(chapitre => {
+      const fieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
       const decryptedData = EncryptionService.decryptRowData(
-        { titre: chapitre.titre, slug: chapitre.slug },
+        fieldsRecord,
         chapitre.uuid,
         chapitre.iv,
         chapitre.tag
@@ -191,36 +259,6 @@ export class ChapitreService {
         slug: decryptedData.slug,
         numero: chapitre.numero,
         storyId: chapitre.storyId,
-        storyUuid: chapitre.storyUuid,
-        createdAt: chapitre.createdAt,
-        updatedAt: chapitre.updatedAt,
-      };
-    });
-  }
-
-  // Récupérer les chapitres d'une story par UUID
-  public static async getChapitresByStoryUuid(storyUuid: string): Promise<ChapitreOutput[]> {
-    const chapitres = await Chapitre.findAll({
-      where: { storyUuid },
-      order: [['numero', 'ASC']],
-    });
-
-    return chapitres.map(chapitre => {
-      const decryptedData = EncryptionService.decryptRowData(
-        { titre: chapitre.titre, slug: chapitre.slug },
-        chapitre.uuid,
-        chapitre.iv,
-        chapitre.tag
-      );
-
-      return {
-        id: chapitre.id,
-        uuid: chapitre.uuid,
-        titre: decryptedData.titre,
-        slug: decryptedData.slug,
-        numero: chapitre.numero,
-        storyId: chapitre.storyId,
-        storyUuid: chapitre.storyUuid,
         createdAt: chapitre.createdAt,
         updatedAt: chapitre.updatedAt,
       };
@@ -230,10 +268,11 @@ export class ChapitreService {
   // Créer un nouveau chapitre
   public static async createChapitre(data: ChapitreInput): Promise<ChapitreOutput> {
     const uuid = uuidv4();
-    const slug = this.generateSlug(data.titre);
+    const fieldsToEncrypt = this.getFieldsToEncrypt(data);
+    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
     
     const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
-      { titre: data.titre, slug },
+      fieldsRecord,
       uuid
     );
 
@@ -243,7 +282,6 @@ export class ChapitreService {
       slug: encryptedData.slug,
       numero: data.numero,
       storyId: data.storyId,
-      storyUuid: data.storyUuid,
       iv,
       tag,
     });
@@ -251,11 +289,10 @@ export class ChapitreService {
     return {
       id: chapitre.id,
       uuid: chapitre.uuid,
-      titre: data.titre,
-      slug,
+      titre: fieldsToEncrypt.titre,
+      slug: fieldsToEncrypt.slug,
       numero: chapitre.numero,
       storyId: chapitre.storyId,
-      storyUuid: chapitre.storyUuid,
       createdAt: chapitre.createdAt,
       updatedAt: chapitre.updatedAt,
     };
@@ -270,19 +307,28 @@ export class ChapitreService {
     }
 
     // Déchiffrer les données actuelles
+    const currentFieldsToDecrypt = this.getFieldsToDecrypt(chapitre);
+    const currentFieldsRecord = this.fieldsToRecord(currentFieldsToDecrypt);
+
     const currentDecryptedData = EncryptionService.decryptRowData(
-      { titre: chapitre.titre, slug: chapitre.slug },
+      currentFieldsRecord,
       chapitre.uuid,
       chapitre.iv,
       chapitre.tag
     );
 
     // Préparer les nouvelles données
-    const newTitre = data.titre || currentDecryptedData.titre;
-    const newSlug = data.titre ? this.generateSlug(data.titre) : currentDecryptedData.slug;
+    const newData: ChapitreInput = {
+      titre: data.titre || currentDecryptedData.titre,
+      numero: data.numero || chapitre.numero,
+      storyId: data.storyId || chapitre.storyId
+    };
+
+    const fieldsToEncrypt = this.getFieldsToEncrypt(newData);
+    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
 
     const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
-      { titre: newTitre, slug: newSlug },
+      fieldsRecord,
       chapitre.uuid
     );
 
@@ -290,9 +336,8 @@ export class ChapitreService {
     await chapitre.update({
       titre: encryptedData.titre,
       slug: encryptedData.slug,
-      numero: data.numero || chapitre.numero,
-      storyId: data.storyId || chapitre.storyId,
-      storyUuid: data.storyUuid || chapitre.storyUuid,
+      numero: newData.numero,
+      storyId: newData.storyId,
       iv,
       tag,
     });
@@ -300,11 +345,10 @@ export class ChapitreService {
     return {
       id: chapitre.id,
       uuid: chapitre.uuid,
-      titre: newTitre,
-      slug: newSlug,
+      titre: fieldsToEncrypt.titre,
+      slug: fieldsToEncrypt.slug,
       numero: chapitre.numero,
       storyId: chapitre.storyId,
-      storyUuid: chapitre.storyUuid,
       createdAt: chapitre.createdAt,
       updatedAt: chapitre.updatedAt,
     };

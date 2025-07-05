@@ -252,7 +252,8 @@ export async function seedData() {
       titre: "L'Aventure de Luna",
       description: "Une jeune exploratrice découvre un cristal magique qui ouvre la porte vers des mondes extraordinaires. Accompagnée des gardiens de la forêt, Luna se lance dans une aventure qui changera sa vie à jamais.",
       auteur: "Narrateur Mystique",
-      statut: "terminee"
+      statut: "terminee",
+      userId: 1
     });
     console.log(`✅ Story créée avec l'ID: ${story.id}`);
     

@@ -20,7 +20,7 @@
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             Le chapitre demandé n'existe pas ou a été supprimé.
           </p>
-          <UButton color="primary" to="/dashboard">
+          <UButton color="primary" to="/dashboard" class="cursor-pointer">
             Retour
           </UButton>
         </div>

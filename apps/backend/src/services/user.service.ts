@@ -25,8 +25,67 @@ export interface LoginCredentials {
   password: string;
 }
 
+// Interface pour les champs chiffrés de User
+interface UserEncryptedFields {
+  email: string;
+  nom: string;
+}
+
 export class UserService {
   private static readonly SALT_ROUNDS = 12;
+
+  // Configuration centralisée des champs chiffrés
+  private static readonly ENCRYPTED_FIELDS_CONFIG = {
+    email: {
+      fromInput: (data: Partial<UserInput>) => data.email || '',
+      fromModel: (model: User) => model.email
+    },
+    nom: {
+      fromInput: (data: Partial<UserInput>) => data.nom || '',
+      fromModel: (model: User) => model.nom
+    }
+  } as const;
+
+  // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
+  private static getFieldsToDecrypt(user: User): UserEncryptedFields {
+    const fields = {} as UserEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromModel(user);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction générique pour extraire les champs à chiffrer depuis les données d'entrée
+  private static getFieldsToEncrypt(data: Partial<UserInput>): UserEncryptedFields {
+    const fields = {} as UserEncryptedFields;
+    
+    for (const [key, config] of Object.entries(this.ENCRYPTED_FIELDS_CONFIG)) {
+      const value = config.fromInput(data);
+      if (value !== undefined) {
+        (fields as any)[key] = value;
+      }
+    }
+    
+    return fields;
+  }
+
+  // Fonction utilitaire pour convertir les champs chiffrés vers Record<string, string>
+  private static fieldsToRecord(fields: UserEncryptedFields): Record<string, string> {
+    const record: Record<string, string> = {};
+    
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        record[key] = value;
+      }
+    }
+    
+    return record;
+  }
 
   // Créer un nouvel utilisateur
   public static async createUser(data: UserInput): Promise<UserOutput> {
@@ -36,12 +95,10 @@ export class UserService {
     const passwordHash = await bcrypt.hash(data.password, this.SALT_ROUNDS);
     
     // Chiffrer les données sensibles
-    const fieldsToEncrypt = {
-      email: data.email,
-      nom: data.nom,
-    };
+    const fieldsToEncrypt = this.getFieldsToEncrypt(data);
+    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
     
-    const { encryptedData, iv, tag } = EncryptionService.encryptRowData(fieldsToEncrypt, uuid);
+    const { encryptedData, iv, tag } = EncryptionService.encryptRowData(fieldsRecord, uuid);
     
     const user = await User.create({
       uuid,
@@ -63,13 +120,11 @@ export class UserService {
     // Chercher l'utilisateur par email déchiffré
     for (const user of users) {
       try {
-        const fieldsToDecrypt = {
-          email: user.email,
-          nom: user.nom,
-        };
+        const fieldsToDecrypt = this.getFieldsToDecrypt(user);
+        const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
         
         const decryptedData = EncryptionService.decryptRowData(
-          fieldsToDecrypt,
+          fieldsRecord,
           user.uuid,
           user.iv,
           user.tag
@@ -123,13 +178,11 @@ export class UserService {
     
     for (const user of users) {
       try {
-        const fieldsToDecrypt = {
-          email: user.email,
-          nom: user.nom,
-        };
+        const fieldsToDecrypt = this.getFieldsToDecrypt(user);
+        const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
         
         const decryptedData = EncryptionService.decryptRowData(
-          fieldsToDecrypt,
+          fieldsRecord,
           user.uuid,
           user.iv,
           user.tag
@@ -156,25 +209,25 @@ export class UserService {
 
     // Si on met à jour des champs chiffrés
     if (data.email || data.nom) {
-      const fieldsToDecrypt = {
-        email: user.email,
-        nom: user.nom,
-      };
+      const currentFieldsToDecrypt = this.getFieldsToDecrypt(user);
+      const currentFieldsRecord = this.fieldsToRecord(currentFieldsToDecrypt);
       
       const currentData = EncryptionService.decryptRowData(
-        fieldsToDecrypt,
+        currentFieldsRecord,
         user.uuid,
         user.iv,
         user.tag
       );
       
       // Préparer les nouvelles données
-      const newData = {
+      const newData: Partial<UserInput> = {
         email: data.email || currentData.email,
         nom: data.nom || currentData.nom,
       };
       
-      const { encryptedData, iv, tag } = EncryptionService.encryptRowData(newData, user.uuid);
+      const fieldsToEncrypt = this.getFieldsToEncrypt(newData);
+      const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
+      const { encryptedData, iv, tag } = EncryptionService.encryptRowData(fieldsRecord, user.uuid);
       
       await user.update({
         email: encryptedData.email,
@@ -207,19 +260,16 @@ export class UserService {
 
   // Vérifier si un email existe déjà
   public static async emailExists(email: string): Promise<boolean> {
-    const existingUser = await this.getUserByEmail(email);
-    return existingUser !== null;
+    const user = await this.getUserByEmail(email);
+    return user !== null;
   }
 
-  // Formater la sortie utilisateur (déchiffrer les données)
   private static formatUserOutput(user: InstanceType<typeof User>): UserOutput {
-    const fieldsToDecrypt = {
-      email: user.email,
-      nom: user.nom,
-    };
+    const fieldsToDecrypt = this.getFieldsToDecrypt(user);
+    const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
     
     const decryptedData = EncryptionService.decryptRowData(
-      fieldsToDecrypt,
+      fieldsRecord,
       user.uuid,
       user.iv,
       user.tag

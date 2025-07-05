@@ -12,6 +12,7 @@
     "db:migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
     "seed": "tsx src/scripts/seed-data.ts",
     "import-book": "tsx src/scripts/import-book.ts",
+    "create-db": "tsx src/scripts/create_db.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

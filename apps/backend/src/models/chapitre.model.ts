@@ -15,7 +15,6 @@ interface ChapitreAttributes {
   slug: string; // Champ chiffré (slug généré depuis le titre, stocké en hex)
   numero: number; // Non chiffré (pour indexation/tri)
   storyId: number; // Clé étrangère vers Story (ID auto-incrémenté)
-  storyUuid: string; // UUID de la story pour référence
   iv: string; // IV partagé pour toute la ligne
   tag: string; // Tag GCM partagé pour toute la ligne
   createdAt?: Date;
@@ -33,7 +32,6 @@ interface ChapitreDecrypted {
   slug: string;
   numero: number;
   storyId: number;
-  storyUuid: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -47,7 +45,6 @@ class Chapitre extends Model<ChapitreAttributes, ChapitreCreationAttributes>
   public slug!: string; // Stocké chiffré
   public numero!: number;
   public storyId!: number;
-  public storyUuid!: string;
   public iv!: string;
   public tag!: string;
   public readonly createdAt!: Date;
@@ -90,10 +87,6 @@ Chapitre.init(
         model: 'stories',
         key: 'id',
       },
-    },
-    storyUuid: {
-      type: DataTypes.UUID,
-      allowNull: false,
     },
     iv: {
       type: DataTypes.TEXT, // IV hex (ou concaténation future) séparé par ':'

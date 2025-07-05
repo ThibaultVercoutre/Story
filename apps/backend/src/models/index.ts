@@ -32,6 +32,17 @@ MorceauTexte.belongsTo(Chapitre, {
   as: 'chapitre',
 });
 
+// Un utilisateur a plusieurs stories
+User.hasMany(Story, {
+  foreignKey: 'userId',
+  as: 'stories',
+  onDelete: 'CASCADE',
+});
+
+Story.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
+});
 
 export default sequelize;
-export { Chapitre, MorceauTexte, Story, User }; 
+export { Chapitre, MorceauTexte, Story, User };

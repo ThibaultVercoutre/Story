@@ -26,12 +26,5 @@ router.use('/morceaux-texte', morceauTexteRoutes);
 
 // Routes pour les chapitres d'une story spécifique
 router.get('/stories/:storyId/chapitres', ChapitreController.getChapitresByStoryId);
-router.get('/stories/uuid/:storyUuid/chapitres', ChapitreController.getChapitresByStoryUuid);
-
-// Route pour les morceaux de texte d'un chapitre spécifique
-router.use('/chapitres/:chapitreId/morceaux-texte', (req, res, next) => {
-  req.params.chapitreId = req.params.chapitreId;
-  next();
-}, morceauTexteRoutes);
 
 export default router; 

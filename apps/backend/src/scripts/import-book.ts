@@ -1,7 +1,7 @@
 import mammoth from 'mammoth';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import sequelize from '../models/index.js';
+import sequelize, { Story } from '../models/index.js';
 import { ChapitreService } from '../services/chapitre.service.js';
 import { MorceauTexteService } from '../services/morceauTexte.service.js';
 import { StoryService } from '../services/story.service.js';
@@ -111,7 +111,11 @@ export async function importBook() {
     }
     
     // Synchroniser la base de données
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ force: false });
+    
+    // supprimer toutes les stories (en cascade)
+    await Story.destroy({ where: {} });
+    
     console.log('📦 Base de données synchronisée');
     
     // Créer la story
@@ -119,7 +123,9 @@ export async function importBook() {
     const story = await StoryService.createStory({
       titre: 'La Bête de Beauxbâtons',
       description: 'Premier tome de la série',
-      auteur: 'Auteur Importé'
+      auteur: 'Auteur Importé',
+      userId: 1,
+      statut: 'terminee'
     });
     
     console.log(`✅ Story créée avec l'ID: ${story.id}`);
@@ -146,7 +152,6 @@ export async function importBook() {
         titre: chapitreData.titre,
         numero: chapitreData.numero,
         storyId: story.id,
-        storyUuid: story.uuid
       });
       
       // Créer les morceaux de texte
@@ -163,7 +168,6 @@ export async function importBook() {
           type,
           ordre: i + 1,
           chapitreId: chapitre.id,
-          chapitreUuid: chapitre.uuid
         });
       }
       

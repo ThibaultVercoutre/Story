@@ -96,7 +96,7 @@
           to="/" 
           class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white inline-flex items-center space-x-2"
         >
-          <UIcon name="i-heroicons-arrow-left" />
+          <UIcon name="i-heroicons-arrow-left" class="cursor-pointer" />
           <span>Retour à l'accueil</span>
         </NuxtLink>
       </div>

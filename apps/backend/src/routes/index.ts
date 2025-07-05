@@ -2,6 +2,7 @@ import { Router } from 'express';
 import chapitreRoutes from './chapitre.routes.js';
 import morceauTexteRoutes from './morceauTexte.routes.js';
 import storyRoutes from './story.routes.js';
+import authRoutes from './auth.routes.js';
 import { ChapitreController } from '../controllers/chapitre.controller.js';
 
 const router = Router();
@@ -10,6 +11,9 @@ const router = Router();
 router.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Routes d'authentification
+router.use('/auth', authRoutes);
 
 // Routes des stories
 router.use('/stories', storyRoutes);

@@ -1,18 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-    <div class="container mx-auto px-4 py-8">
-      <!-- Breadcrumb / Navigation -->
-      <div class="mb-8">
-        <UButton
-          variant="ghost"
-          color="neutral"
-          leading-icon="i-heroicons-arrow-left"
-          @click="router.back()"
-          class="mb-4"
-        >
-          Retour
-        </UButton>
-      </div>
+  <div>
+    <!-- Breadcrumb / Navigation -->
+    <div class="mb-8">
+      <UButton
+        variant="ghost"
+        color="neutral"
+        leading-icon="i-heroicons-arrow-left"
+        @click="router.back()"
+        class="mb-4"
+      >
+        Retour
+      </UButton>
+    </div>
 
       <!-- Loading state -->
       <div v-if="isLoading" class="text-center py-12">
@@ -158,16 +157,21 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, useHead, navigateTo } from 'nuxt/app'
-import { StoryService } from '../../services/story.service'
-import type { StoryOutput } from '../../types/story.types'
-import { ChapitreService } from '../../services/chapitre.service'
-import type { Chapitre } from '../../types/chapitre.types'
+import { StoryService } from '~/services/story.service'
+import type { StoryOutput } from '~/types/story.types'
+import { ChapitreService } from '~/services/chapitre.service'
+import type { Chapitre } from '~/types/chapitre.types'
+
+// Utiliser le layout dashboard
+definePageMeta({
+  layout: 'dashboard',
+  middleware: 'auth'
+})
 
 const router = useRouter()
 
@@ -194,7 +198,7 @@ useHead({
 
 // Fonction pour naviguer vers un chapitre
 const navigateToChapitre = (chapitre: Chapitre) => {
-  navigateTo(`/${storySlug}/${chapitre.slug}`)
+  navigateTo(`/dashboard/stories/${storySlug}/${chapitre.slug}`)
 }
 
 // Fonction pour obtenir la couleur du statut

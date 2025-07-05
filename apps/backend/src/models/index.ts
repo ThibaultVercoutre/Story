@@ -2,6 +2,7 @@ import sequelize from '../config/database.js';
 import Chapitre from './chapitre.model.js';
 import MorceauTexte from './morceauTexte.model.js';
 import Story from './story.model.js';
+import User from './user.model.js';
 
 // Ici nous définirons les associations entre les modèles
 // Exemple: User.hasMany(Post);
@@ -31,5 +32,6 @@ MorceauTexte.belongsTo(Chapitre, {
   as: 'chapitre',
 });
 
+
 export default sequelize;
-export { Chapitre, MorceauTexte, Story }; 
+export { Chapitre, MorceauTexte, Story, User }; 

@@ -1,185 +1,155 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-    <!-- Header avec titre principal -->
-    <div class="container mx-auto px-4 py-8">
-      <div class="text-center mb-12">
-        <h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
-          📚 <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Story</span>
-        </h1>
-        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Découvrez et explorez des histoires captivantes dans notre collection
-        </p>
-      </div>
-
-      <!-- Loading state -->
-      <div v-if="isLoading" class="text-center py-12">
-        <div class="inline-flex items-center space-x-3">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p class="text-gray-600 dark:text-gray-300 text-lg">Chargement des histoires...</p>
+    <!-- Header avec navigation -->
+    <header class="container mx-auto px-4 py-6">
+      <nav class="flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">📚</span>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Story</h1>
         </div>
-      </div>
-
-      <!-- Stories grid -->
-      <div v-else-if="stories.length > 0" class="space-y-8">
-        <!-- Stats -->
-        <div class="text-center">
-          <UBadge color="blue" variant="soft" size="lg" class="px-4 py-2">
-            {{ stories.length }} {{ stories.length > 1 ? 'histoires' : 'histoire' }} disponible{{ stories.length > 1 ? 's' : '' }}
-          </UBadge>
-        </div>
-
-        <!-- Grid des stories -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <UCard 
-            v-for="story in stories" 
-            :key="story.id"
-            class="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
-            :ui="{ 
-              body: { padding: 'p-6' },
-              ring: 'ring-1 ring-gray-200 dark:ring-gray-700',
-              background: 'bg-white dark:bg-gray-800'
-            }"
-            @click="navigateToStory(story)"
+        <div class="flex items-center space-x-4">
+          <UButton
+            to="/login"
+            variant="ghost"
+            color="blue"
+            size="sm"
           >
-            <template #header>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white text-xl">📖</span>
-                  </div>
-                  <div>
-                    <UBadge 
-                      :color="getStatusColor(story.statut)" 
-                      variant="soft" 
-                      size="sm"
-                    >
-                      {{ getStatusLabel(story.statut) }}
-                    </UBadge>
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {{ story.titre }}
-                </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Par {{ story.auteur }}
-                </p>
-              </div>
-
-              <p v-if="story.description" class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
-                {{ story.description }}
-              </p>
-
-              <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ formatDate(story.createdAt) }}
-                </div>
-                <UButton 
-                  color="blue" 
-                  variant="ghost" 
-                  size="sm"
-                  trailing-icon="i-heroicons-arrow-right"
-                >
-                  Lire
-                </UButton>
-              </div>
-            </div>
-          </UCard>
+            Connexion
+          </UButton>
+          <UButton
+            to="/register"
+            color="blue"
+            size="sm"
+          >
+            Inscription
+          </UButton>
         </div>
-      </div>
+      </nav>
+    </header>
 
-      <!-- Empty state -->
-      <div v-else class="text-center py-16">
-        <div class="max-w-md mx-auto">
-          <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <span class="text-4xl">📚</span>
-          </div>
-          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Aucune histoire disponible
-          </h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-6">
-            Il n'y a pas encore d'histoires à découvrir.
-          </p>
-          <UButton color="blue" size="lg">
-            Créer une histoire
+    <!-- Hero Section -->
+    <section class="container mx-auto px-4 py-16 text-center">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6">
+          Créez vos
+          <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            histoires
+          </span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+          Une plateforme sécurisée pour écrire, organiser et partager vos histoires. 
+          Vos données sont chiffrées et protégées.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <UButton
+            to="/register"
+            color="blue"
+            size="xl"
+            class="px-8 py-4"
+          >
+            Commencer à écrire
+          </UButton>
+          <UButton
+            to="/login"
+            variant="outline"
+            color="blue"
+            size="xl"
+            class="px-8 py-4"
+          >
+            Se connecter
           </UButton>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="container mx-auto px-4 py-16">
+      <div class="max-w-6xl mx-auto">
+        <h3 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+          Pourquoi choisir Story ?
+        </h3>
+        <div class="grid md:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UIcon name="i-heroicons-shield-check" class="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Sécurité maximale
+            </h4>
+            <p class="text-gray-600 dark:text-gray-300">
+              Vos histoires sont chiffrées avec un système de sécurité avancé. 
+              Seul vous pouvez les lire.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UIcon name="i-heroicons-document-text" class="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Organisation intuitive
+            </h4>
+            <p class="text-gray-600 dark:text-gray-300">
+              Structurez vos histoires en chapitres et morceaux de texte. 
+              Gardez tout organisé.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UIcon name="i-heroicons-photo" class="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Illustrations à venir
+            </h4>
+            <p class="text-gray-600 dark:text-gray-300">
+              Bientôt, ajoutez des images pour illustrer vos histoires et 
+              les rendre encore plus vivantes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="container mx-auto px-4 py-16">
+      <div class="max-w-4xl mx-auto text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white">
+        <h3 class="text-3xl font-bold mb-4">
+          Prêt à commencer votre aventure ?
+        </h3>
+        <p class="text-xl mb-8 opacity-90">
+          Rejoignez Story et donnez vie à vos histoires en toute sécurité.
+        </p>
+        <UButton
+          to="/register"
+          color="white"
+          size="xl"
+          class="px-8 py-4"
+        >
+          Créer mon compte
+        </UButton>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="container mx-auto px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+      <p>&copy; 2024 Story. Vos histoires, en sécurité.</p>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { StoryService } from '../services/story.service'
-
 // Métadonnées de la page
 useHead({
-  title: 'Accueil - Story',
+  title: 'Story - Créez vos histoires en toute sécurité',
   meta: [
-    { name: 'description', content: 'Bienvenue dans Story - Découvrez et explorez vos histoires' }
+    { 
+      name: 'description', 
+      content: 'Plateforme sécurisée pour écrire, organiser et partager vos histoires. Vos données sont chiffrées et protégées.' 
+    }
   ]
 })
-
-const stories = ref([])
-const isLoading = ref(true)
-
-// Fonction pour naviguer vers une story
-const navigateToStory = (story) => {
-  navigateTo(`/${story.slug}`)
-}
-
-// Fonction pour obtenir la couleur du statut
-const getStatusColor = (statut) => {
-  const colors = {
-    'brouillon': 'gray',
-    'en_cours': 'blue',
-    'terminee': 'green',
-    'publiee': 'purple'
-  }
-  return colors[statut] || 'gray'
-}
-
-// Fonction pour obtenir le label du statut
-const getStatusLabel = (statut) => {
-  const labels = {
-    'brouillon': 'Brouillon',
-    'en_cours': 'En cours',
-    'terminee': 'Terminée',
-    'publiee': 'Publiée'
-  }
-  return labels[statut] || statut
-}
-
-// Fonction pour formater la date
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-}
-
-onMounted(async () => {
-  try {
-    stories.value = await StoryService.getStories()
-  } catch (error) {
-    console.error('Erreur lors de la récupération des stories:', error)
-  } finally {
-    isLoading.value = false
-  }
-})
-</script>
-
-<style scoped>
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style> 
+</script> 

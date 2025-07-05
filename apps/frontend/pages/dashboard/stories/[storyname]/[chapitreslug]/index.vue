@@ -1,8 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="container mx-auto px-4 py-8">
-      <!-- Loading state -->
-      <div v-if="isLoading" class="text-center py-16">
+  <div>
+    <!-- Loading state -->
+    <div v-if="isLoading" class="text-center py-16">
         <div class="inline-flex items-center space-x-3">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <p class="text-gray-600 dark:text-gray-300">Chargement du chapitre...</p>
@@ -21,7 +20,7 @@
           <p class="text-gray-600 dark:text-gray-400 mb-6">
             Le chapitre demandé n'existe pas ou a été supprimé.
           </p>
-          <UButton color="primary" @click="router.back()">
+          <UButton color="primary" to="/dashboard">
             Retour
           </UButton>
         </div>
@@ -31,11 +30,11 @@
       <div v-else>
         <!-- Navigation breadcrumb -->
         <nav class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
-          <NuxtLink to="/" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          <NuxtLink to="/dashboard" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             Accueil
           </NuxtLink>
           <span>›</span>
-          <NuxtLink :to="`/${storySlug}`" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          <NuxtLink :to="`/dashboard/stories/${storySlug}`" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             {{ story?.titre }}
           </NuxtLink>
           <span>›</span>
@@ -145,18 +144,23 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, useHead, navigateTo } from 'nuxt/app'
-import { ChapitreService } from '../../../services/chapitre.service'
-import { StoryService } from '../../../services/story.service'
-import { MorceauTexteService } from '../../../services/morceau-texte.service'
-import type { Chapitre } from '../../../types/chapitre.types'
-import type { StoryOutput } from '../../../types/story.types'
-import type { MorceauTexteOutput } from '../../../types/morceau-texte.types'
+import { ChapitreService } from '~/services/chapitre.service'
+import { StoryService } from '~/services/story.service'
+import { MorceauTexteService } from '~/services/morceau-texte.service'
+import type { Chapitre } from '~/types/chapitre.types'
+import type { StoryOutput } from '~/types/story.types'
+import type { MorceauTexteOutput } from '~/types/morceau-texte.types'
+
+// Utiliser le layout dashboard
+definePageMeta({
+  layout: 'dashboard',
+  middleware: 'auth'
+})
 
 const router = useRouter()
 
@@ -209,7 +213,7 @@ useHead({
 
 // Fonction pour naviguer vers un chapitre
 const navigateToChapter = (chapter: Chapitre) => {
-  navigateTo(`/${storySlug}/${chapter.id}`)
+  navigateTo(`/dashboard/stories/${storySlug}/${chapter.id}`)
 }
 
 // Fonction pour formater la date

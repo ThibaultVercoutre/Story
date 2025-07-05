@@ -1,8 +1,8 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database.js';
 
-// Interface pour les attributs de la story
-interface StoryAttributes {
+// Interface pour les attributs de la saga
+interface SagaAttributes {
   id: number; // ID auto-incrémenté pour la base de données
   uuid: string; // UUID pour la dérivation de clé de chiffrement
   titre: string; // Champ chiffré (stocké en hex)
@@ -12,17 +12,15 @@ interface StoryAttributes {
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee'; // Non chiffré
   iv: string; // IV partagé pour toute la ligne
   tag: string; // Tag GCM partagé pour toute la ligne
-  userId: number; // ID de l'utilisateur
-  sagaId?: number; // ID de la saga (optionnel car une story peut être indépendante)
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 // Interface pour la création (id et uuid optionnels car générés automatiquement)
-interface StoryCreationAttributes extends Optional<StoryAttributes, 'id' | 'uuid'> {}
+interface SagaCreationAttributes extends Optional<SagaAttributes, 'id' | 'uuid'> {}
 
 // Interface pour les données en clair (utilisée par les services)
-interface StoryDecrypted {
+interface SagaDecrypted {
   id: number;
   uuid: string;
   titre: string;
@@ -30,14 +28,13 @@ interface StoryDecrypted {
   description?: string;
   auteur: string;
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
-  sagaId?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 // Définition du modèle
-class Story extends Model<StoryAttributes, StoryCreationAttributes> 
-  implements StoryAttributes {
+class Saga extends Model<SagaAttributes, SagaCreationAttributes> 
+  implements SagaAttributes {
   public id!: number;
   public uuid!: string;
   public titre!: string; // Stocké chiffré
@@ -47,14 +44,12 @@ class Story extends Model<StoryAttributes, StoryCreationAttributes>
   public statut!: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   public iv!: string;
   public tag!: string;
-  public userId!: number;
-  public sagaId?: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
 // Initialisation du modèle
-Story.init(
+Saga.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -96,30 +91,14 @@ Story.init(
       type: DataTypes.TEXT, // concaténation de plusieurs tags hex séparés par ':'
       allowNull: false,
     },
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-    },
-    sagaId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'sagas',
-        key: 'id',
-      },
-    },
   },
   {
     sequelize,
-    modelName: 'Story',
-    tableName: 'stories',
+    modelName: 'Saga',
+    tableName: 'sagas',
     timestamps: true,
   }
 );
 
-export default Story;
-export type { StoryDecrypted };
+export default Saga;
+export type { SagaDecrypted };

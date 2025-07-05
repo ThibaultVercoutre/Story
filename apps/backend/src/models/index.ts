@@ -1,6 +1,7 @@
 import sequelize from '../config/database.js';
 import Chapitre from './chapitre.model.js';
 import MorceauTexte from './morceauTexte.model.js';
+import Saga from './saga.model.js';
 import Story from './story.model.js';
 import User from './user.model.js';
 
@@ -8,6 +9,18 @@ import User from './user.model.js';
 // Exemple: User.hasMany(Post);
 
 // Définition des associations
+// Une saga a plusieurs stories
+Saga.hasMany(Story, {
+  foreignKey: 'sagaId',
+  as: 'stories',
+  onDelete: 'SET NULL',
+});
+
+Story.belongsTo(Saga, {
+  foreignKey: 'sagaId',
+  as: 'saga',
+});
+
 // Une story a plusieurs chapitres
 Story.hasMany(Chapitre, {
   foreignKey: 'storyId',
@@ -45,4 +58,4 @@ Story.belongsTo(User, {
 });
 
 export default sequelize;
-export { Chapitre, MorceauTexte, Story, User };
+export { Chapitre, MorceauTexte, Saga, Story, User };

@@ -4,4 +4,6 @@
 export { EncryptionService } from './encryption.service.js';
 export { ChapitreService } from './chapitre.service.js';
 export { MorceauTexteService } from './morceauTexte.service.js';
-export { StoryService } from './story.service.js'; 
+export { SagaService } from './saga.service.js';
+export { StoryService } from './story.service.js';
+export { UserService } from './user.service.js'; 

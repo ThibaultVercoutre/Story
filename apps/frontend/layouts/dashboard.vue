@@ -30,6 +30,15 @@
 
           <!-- Menu utilisateur -->
           <div class="flex items-center space-x-4">
+            <!-- Deconnexion -->
+            <UButton
+              icon="i-heroicons-arrow-right-on-rectangle"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="handleLogout"
+            />
+            
             <!-- Notifications -->
             <UButton
               icon="i-heroicons-bell"

@@ -54,12 +54,40 @@
             <div class="flex items-center justify-center space-x-4 text-gray-600 dark:text-gray-300">
               <span>Par {{ story?.auteur }}</span>
               <span>•</span>
+              <!-- Select pour les propriétaires -->
+              <select
+                v-if="isOwner && story"
+                :value="story.statut"
+                @change="(e) => updateStatus((e.target as HTMLSelectElement).value)"
+                :disabled="isUpdatingStatus"
+                class="min-w-[120px] px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+              >
+                <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            
+              <!-- Badge pour les non-propriétaires -->
               <UBadge 
+                v-else
                 :color="getStatusColor(story?.statut)" 
                 variant="soft"
               >
                 {{ getStatusLabel(story?.statut) }}
               </UBadge>
+
+              <!-- Select pour l'ajouter à une sage ou non -->
+              <select
+                v-if="isOwner && story"
+                :value="story.sagaId ? story.sagaId.toString() : ''"
+                @change="(e) => updateSaga((e.target as HTMLSelectElement).value)"
+                :disabled="isUpdatingSaga"
+                class="min-w-[120px] px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+              >
+                <option v-for="option in sagaOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
           </div>
 
@@ -164,9 +192,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, useHead, navigateTo } from 'nuxt/app'
 import { StoryService } from '~/services/story.service'
-import type { StoryOutput } from '~/types/story.types'
+import type { StoryOutput, SagaOutput } from '~/types/story.types'
 import { ChapitreService } from '~/services/chapitre.service'
 import type { Chapitre } from '~/types/chapitre.types'
+import { useAuth } from '~/composables/useAuth'
+import { Statut } from '~/types/story.types'
+import { SagaService } from '~/services/saga.service'
 
 // Utiliser le layout dashboard
 definePageMeta({
@@ -175,16 +206,56 @@ definePageMeta({
 })
 
 const router = useRouter()
+const { user } = useAuth()
 
 const route = useRoute()
 const storySlug = route.params.storyname as string
 
 // États réactifs
 const story = ref<StoryOutput | null>(null)
+const saga = ref<SagaOutput | null>(null)
 const chapitres = ref<Chapitre[]>([])
 const isLoading = ref(true)
 const isLoadingChapitres = ref(true)
+const isUpdatingStatus = ref(false)
+const isUpdatingSaga = ref(false)
 const error = ref(false)
+
+// Computed pour vérifier si l'utilisateur possède l'histoire
+const isOwner = computed(() => {
+  return user.value && story.value && user.value.id === story.value.userId
+})
+
+// Computed pour vérifier si l'utilisateur possède une saga
+const isSagaOwner = computed(() => {
+  return user.value && story.value
+})
+
+// Options de statut disponibles - générées automatiquement
+const statusLabels: Record<string, string> = {
+  [Statut.BROUILLON]: 'Brouillon',
+  [Statut.EN_COURS]: 'En cours',
+  [Statut.TERMINEE]: 'Terminée',
+  [Statut.PUBLIEE]: 'Publiée'
+}
+
+const statusOptions = Object.values(Statut).map(statut => ({
+  label: statusLabels[statut] || statut,
+  value: statut
+}))
+
+// Récupérer les sagas disponibles
+const sagas = ref<SagaOutput[]>([])
+
+// Options de saga disponibles (computed pour réactivité)
+const sagaOptions = computed(() => [
+  { label: 'Aucune saga', value: '' },
+  ...(Array.isArray(sagas.value) ? sagas.value.map(saga => ({
+    label: saga.titre,
+    value: saga.id.toString()
+  })) : []),
+  { label: 'Ajouter une saga', value: '0' },
+])
 
 // Métadonnées de la page
 useHead({
@@ -233,14 +304,89 @@ const formatDate = (dateString: string) => {
   })
 }
 
+// Fonction pour mettre à jour le statut de l'histoire
+const updateStatus = async (newStatus: string) => {
+  if (!story.value || !isOwner.value) return
+  
+  isUpdatingStatus.value = true
+  
+  try {
+    const updatedStory = await StoryService.updateStory(story.value.id, {
+      statut: newStatus as Statut
+    })
+    
+    // Mettre à jour la story locale
+    story.value = updatedStory
+    
+    // Optionnel : afficher un message de succès
+    // console.log('Statut mis à jour avec succès')
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut:', error)
+    // Optionnel : afficher un message d'erreur
+  } finally {
+    isUpdatingStatus.value = false
+  }
+}
+
+// Fonction pour mettre à jour la saga de l'histoire
+const updateSaga = async (newSagaId: string) => {
+  if (!story.value || !isOwner.value) return
+  
+  if (newSagaId === '0') {
+    // Logique pour créer une nouvelle saga
+    return
+  }
+
+  if (newSagaId === '-1') {
+    // Logique pour supprimer la saga
+    SagaService.deleteSaga(story.value.sagaId?.toString() || '')
+    return
+  }
+  
+  isUpdatingSaga.value = true
+  
+  try {
+    const updatedStory = await StoryService.updateStory(story.value.id, {
+      sagaId: newSagaId && newSagaId !== '' ? parseInt(newSagaId) : undefined
+    })
+    
+    story.value = updatedStory
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la saga:', error)
+  } finally {
+    isUpdatingSaga.value = false
+  }
+}
+
 onMounted(async () => {
   try {
+    // Vérifier que le storySlug existe
+    if (!storySlug) {
+      error.value = true
+      isLoading.value = false
+      return
+    }
+
     // Charger la story par ID ou slug
     story.value = await StoryService.getStoryByIdOrSlug(storySlug)
-    isLoading.value = false
 
-    // Charger les chapitres en utilisant l'ID de la story
-    chapitres.value = await ChapitreService.getChapitresByStoryId(story.value?.id || '')
+    // Charger les chapitres et sagas en parallèle
+    const [chapitresData, sagasData] = await Promise.all([
+      ChapitreService.getChapitresByStoryId(story.value?.id || ''),
+      user.value ? SagaService.getSagasByAuteur(user.value.nom) : Promise.resolve([])
+    ])
+    
+    // Assigner les données
+    chapitres.value = Array.isArray(chapitresData) ? chapitresData : []
+    sagas.value = Array.isArray(sagasData) ? sagasData : []
+    
+    // Charger la saga de l'histoire si elle existe
+    if (story.value?.sagaId) {
+      saga.value = await SagaService.getSagaById(story.value.sagaId.toString())
+    }
+    
+    // Marquer le chargement comme terminé
+    isLoading.value = false
   } catch (err) {
     console.error('Erreur lors du chargement:', err)
     error.value = true

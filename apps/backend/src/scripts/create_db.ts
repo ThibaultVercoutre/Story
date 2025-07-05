@@ -2,7 +2,8 @@
 
 import * as dotenv from 'dotenv';
 import sequelize from '../config/database.js';
-import { User, Story, Chapitre, MorceauTexte } from '../models/index.js';
+import { User, Saga, Story, Chapitre, MorceauTexte } from '../models/index.js';
+import { UserService } from '../services/user.service.js';
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -37,6 +38,9 @@ async function createDatabase() {
     await User.sync({ force: true });
     console.log('✅ Table "users" créée.');
     
+    await Saga.sync({ force: true });
+    console.log('✅ Table "sagas" créée.');
+    
     await Story.sync({ force: true });
     console.log('✅ Table "stories" créée.');
     
@@ -55,9 +59,23 @@ async function createDatabase() {
     console.log('✅ Base de données créée avec succès !');
     console.log('📊 Résumé des tables créées :');
     console.log('  - users (utilisateurs)');
+    console.log('  - sagas (sagas)');
     console.log('  - stories (histoires)');
     console.log('  - chapitres (chapitres)');
     console.log('  - morceaux_texte (morceaux de texte)');
+
+    // créer un utilisateur avec le service user.service.ts
+    await UserService.createUser({
+      email: 'sirhyus.jeux@gmail.com',
+      nom: 'Thibault',
+      password: 'Tv21082002'
+    });
+
+    console.log('✅ Utilisateur créé avec succès !');
+    console.log('📊 Résumé des tables créées :');
+    console.log('  - users (utilisateurs)');
+    console.log('  - sagas (sagas)');
+    console.log('  - stories (histoires)');
     
   } catch (error) {
     console.error('❌ Erreur lors de la création de la base de données :', error);

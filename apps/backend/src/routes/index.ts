@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import chapitreRoutes from './chapitre.routes.js';
 import morceauTexteRoutes from './morceauTexte.routes.js';
+import sagaRoutes from './saga.routes.js';
 import storyRoutes from './story.routes.js';
 import authRoutes from './auth.routes.js';
 import { ChapitreController } from '../controllers/chapitre.controller.js';
@@ -14,6 +15,9 @@ router.get('/health', (req, res) => {
 
 // Routes d'authentification
 router.use('/auth', authRoutes);
+
+// Routes des sagas
+router.use('/sagas', sagaRoutes);
 
 // Routes des stories
 router.use('/stories', storyRoutes);

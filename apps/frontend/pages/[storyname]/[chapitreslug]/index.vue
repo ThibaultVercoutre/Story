@@ -28,9 +28,9 @@
       </div>
 
       <!-- Content -->
-      <div v-else class="space-y-8">
+      <div v-else>
         <!-- Navigation breadcrumb -->
-        <nav class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+        <nav class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
           <NuxtLink to="/" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             Accueil
           </NuxtLink>
@@ -59,32 +59,38 @@
         </div>
 
         <!-- Chapter navigation -->
-        <div class="flex justify-between items-center max-w-4xl mx-auto">
-          <UButton 
-            v-if="previousChapter"
-            color="primary" 
-            variant="ghost"
-            leading-icon="i-heroicons-arrow-left"
-            @click="navigateToChapter(previousChapter)"
-          >
-            Chapitre précédent
-          </UButton>
-          <div v-else></div>
+        <div class="flex justify-between items-center max-w-4xl mx-auto sticky top-5 z-10 my-8 backdrop-blur-xs border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div class="flex-1 flex justify-center">
+            <UButton 
+              v-if="previousChapter"
+              color="primary" 
+              variant="ghost"
+              leading-icon="i-heroicons-arrow-left"
+              @click="navigateToChapter(previousChapter)"
+              class="cursor-pointer"
+            >
+              Chapitre précédent
+            </UButton>
+          </div>
 
-          <UBadge color="primary" variant="soft" class="px-4 py-2">
-            {{ chapitre?.numero }} / {{ totalChapters }}
-          </UBadge>
+          <div class="flex-1 flex justify-center">
+            <UBadge color="primary" variant="soft" class="px-4 py-2 text-center">
+              {{ chapitre?.numero }} / {{ totalChapters }}
+            </UBadge>
+          </div>
 
-          <UButton 
-            v-if="nextChapter"
-            color="primary" 
-            variant="ghost"
-            trailing-icon="i-heroicons-arrow-right"
-            @click="navigateToChapter(nextChapter)"
-          >
-            Chapitre suivant
-          </UButton>
-          <div v-else></div>
+          <div class="flex-1 flex justify-center">
+            <UButton 
+              v-if="nextChapter"
+              color="primary" 
+              variant="ghost"
+              trailing-icon="i-heroicons-arrow-right"
+              @click="navigateToChapter(nextChapter)"
+              class="cursor-pointer"
+            >
+              Chapitre suivant
+            </UButton>
+          </div>
         </div>
 
         <!-- Chapter content -->
@@ -117,7 +123,7 @@
                   
                   <!-- Dialogue -->
                   <p v-else-if="morceau.type === 'dialogue'"  class="text-gray-800 dark:text-gray-200 font-medium">
-                    <span class="inline-block w-6 sm:w-8 md:w-10 lg:w-12 text-center">-</span>{{ morceau.contenu }}
+                    <span class="inline-block w-6 sm:w-8 md:w-10 lg:w-12 text-center">—</span>{{ morceau.contenu }}
                   </p>
                 </div>
               </div>

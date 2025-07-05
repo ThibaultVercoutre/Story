@@ -156,10 +156,10 @@
             </template>
 
             <div class="space-y-3">
-              <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
                 {{ story.titre }}
               </h3>
-              <p v-if="story.description" class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+              <p v-if="story.description" class="text-sm text-gray-600 dark:text-gray-300">
                 {{ story.description }}
               </p>
             </div>
@@ -275,19 +275,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style> 

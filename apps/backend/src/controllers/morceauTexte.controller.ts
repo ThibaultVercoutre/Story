@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MorceauTexteService } from '../services/morceauTexte.service.js';
 import { TypeMorceauTexte } from '../models/morceauTexte.model.js';
+import { ResponseUtil } from '../utils/response.util.js';
 
 export class MorceauTexteController {
   // GET /api/chapitres/:chapitreId/morceaux-texte - Par ID de chapitre
@@ -10,14 +11,15 @@ export class MorceauTexteController {
       const numericChapitreId = parseInt(chapitreId, 10);
       
       if (isNaN(numericChapitreId)) {
-        return res.status(400).json({ error: 'ID de chapitre invalide' });
+        ResponseUtil.error(res, 'ID de chapitre invalide', 400);
+        return;
       }
       
       const morceaux = await MorceauTexteService.getMorceauxTexteByChapitreId(numericChapitreId);
-      res.json(morceaux);
+      ResponseUtil.success(res, morceaux, 'Morceaux de texte récupérés avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération des morceaux de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la récupération des morceaux de texte');
     }
   }
 
@@ -28,19 +30,21 @@ export class MorceauTexteController {
       const numericId = parseInt(id, 10);
       
       if (isNaN(numericId)) {
-        return res.status(400).json({ error: 'ID invalide' });
+        ResponseUtil.error(res, 'ID invalide', 400);
+        return;
       }
       
       const morceau = await MorceauTexteService.getMorceauTexteById(numericId);
       
       if (!morceau) {
-        return res.status(404).json({ error: 'Morceau de texte non trouvé' });
+        ResponseUtil.notFound(res, 'Morceau de texte non trouvé');
+        return;
       }
       
-      res.json(morceau);
+      ResponseUtil.success(res, morceau, 'Morceau de texte récupéré avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération du morceau de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la récupération du morceau de texte');
     }
   }
 
@@ -51,13 +55,14 @@ export class MorceauTexteController {
       const morceau = await MorceauTexteService.getMorceauTexteByUuid(uuid);
       
       if (!morceau) {
-        return res.status(404).json({ error: 'Morceau de texte non trouvé' });
+        ResponseUtil.notFound(res, 'Morceau de texte non trouvé');
+        return;
       }
       
-      res.json(morceau);
+      ResponseUtil.success(res, morceau, 'Morceau de texte récupéré avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération du morceau de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la récupération du morceau de texte');
     }
   }
 
@@ -67,20 +72,19 @@ export class MorceauTexteController {
       const { chapitreId, type, contenu, ordre } = req.body;
       
       if (!chapitreId || !type || !contenu || !ordre) {
-        return res.status(400).json({ 
-          error: 'ChapitreId, type, contenu et ordre sont requis' 
-        });
+        ResponseUtil.error(res, 'ChapitreId, type, contenu et ordre sont requis', 400);
+        return;
       }
       
       const numericChapitreId = parseInt(chapitreId, 10);
       if (isNaN(numericChapitreId)) {
-        return res.status(400).json({ error: 'chapitreId doit être un nombre' });
+        ResponseUtil.error(res, 'chapitreId doit être un nombre', 400);
+        return;
       }
       
       if (!Object.values(TypeMorceauTexte).includes(type)) {
-        return res.status(400).json({ 
-          error: 'Type invalide. Types acceptés: paragraphe, citation, dialogue' 
-        });
+        ResponseUtil.error(res, 'Type invalide. Types acceptés: paragraphe, citation, dialogue', 400);
+        return;
       }
       
       const morceau = await MorceauTexteService.createMorceauTexte({
@@ -90,10 +94,10 @@ export class MorceauTexteController {
         ordre
       });
       
-      res.status(201).json(morceau);
+      ResponseUtil.created(res, morceau, 'Morceau de texte créé avec succès');
     } catch (error) {
       console.error('Erreur lors de la création du morceau de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la création du morceau de texte');
     }
   }
 
@@ -104,7 +108,8 @@ export class MorceauTexteController {
       const numericId = parseInt(id, 10);
       
       if (isNaN(numericId)) {
-        return res.status(400).json({ error: 'ID invalide' });
+        ResponseUtil.error(res, 'ID invalide', 400);
+        return;
       }
       
       const { chapitreId, type, contenu, ordre } = req.body;
@@ -113,14 +118,14 @@ export class MorceauTexteController {
       if (chapitreId !== undefined) {
         numericChapitreId = parseInt(chapitreId, 10);
         if (isNaN(numericChapitreId)) {
-          return res.status(400).json({ error: 'chapitreId doit être un nombre' });
+          ResponseUtil.error(res, 'chapitreId doit être un nombre', 400);
+          return;
         }
       }
       
       if (type && !Object.values(TypeMorceauTexte).includes(type)) {
-        return res.status(400).json({ 
-          error: 'Type invalide. Types acceptés: paragraphe, citation, dialogue' 
-        });
+        ResponseUtil.error(res, 'Type invalide. Types acceptés: paragraphe, citation, dialogue', 400);
+        return;
       }
       
       const morceau = await MorceauTexteService.updateMorceauTexte(numericId, {
@@ -131,13 +136,14 @@ export class MorceauTexteController {
       });
       
       if (!morceau) {
-        return res.status(404).json({ error: 'Morceau de texte non trouvé' });
+        ResponseUtil.notFound(res, 'Morceau de texte non trouvé');
+        return;
       }
       
-      res.json(morceau);
+      ResponseUtil.success(res, morceau, 'Morceau de texte mis à jour avec succès');
     } catch (error) {
       console.error('Erreur lors de la mise à jour du morceau de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la mise à jour du morceau de texte');
     }
   }
 
@@ -148,19 +154,21 @@ export class MorceauTexteController {
       const numericId = parseInt(id, 10);
       
       if (isNaN(numericId)) {
-        return res.status(400).json({ error: 'ID invalide' });
+        ResponseUtil.error(res, 'ID invalide', 400);
+        return;
       }
       
       const success = await MorceauTexteService.deleteMorceauTexte(numericId);
       
       if (!success) {
-        return res.status(404).json({ error: 'Morceau de texte non trouvé' });
+        ResponseUtil.notFound(res, 'Morceau de texte non trouvé');
+        return;
       }
       
-      res.status(204).send();
+      ResponseUtil.success(res, null, 'Morceau de texte supprimé avec succès');
     } catch (error) {
       console.error('Erreur lors de la suppression du morceau de texte:', error);
-      res.status(500).json({ error: 'Erreur interne du serveur' });
+      ResponseUtil.handleError(res, error, 'la suppression du morceau de texte');
     }
   }
 } 

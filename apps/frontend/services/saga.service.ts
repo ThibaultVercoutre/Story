@@ -10,7 +10,8 @@ export class SagaService {
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des sagas:', error);
       throw error;
@@ -22,14 +23,15 @@ export class SagaService {
     if (!id) return null;
     
     try {
-      const response = await fetch(`${this.baseUrl}/${id}`);
+      const response = await fetch(`${this.baseUrl}/id/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           return null;
         }
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de la saga:', error);
       return null;
@@ -43,10 +45,50 @@ export class SagaService {
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des sagas par auteur:', error);
       return []; // Retourner un tableau vide en cas d'erreur
+    }
+  }
+
+  // Récupérer les sagas par userId
+  static async getSagasByUserId(userId: number): Promise<SagaOutput[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/userId/${userId}`);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error('Erreur lors de la récupération des sagas par userId:', error);
+      return []; // Retourner un tableau vide en cas d'erreur
+    }
+  }
+
+  // Créer une nouvelle saga
+  static async createSaga(data: { titre: string; description?: string; auteur: string; userId: number }): Promise<SagaOutput> {
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error('Erreur lors de la création de la saga:', error);
+      throw error;
     }
   }
 
@@ -54,8 +96,15 @@ export class SagaService {
   static async deleteSaga(id: string): Promise<void> {
     try {
       const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'DELETE'
-      })
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Saga non trouvée');
+        }
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
     } catch (error) {
       console.error('Erreur lors de la suppression de la saga:', error);
       throw error;

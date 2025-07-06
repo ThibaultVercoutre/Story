@@ -9,6 +9,7 @@ interface SagaAttributes {
   slug: string; // Champ chiffré (slug généré depuis le titre, stocké en hex)
   description?: string; // Champ chiffré optionnel (stocké en hex)
   auteur: string; // Non chiffré (pour recherche/tri)
+  userId: number; // Non chiffré (pour recherche/tri)
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee'; // Non chiffré
   iv: string; // IV partagé pour toute la ligne
   tag: string; // Tag GCM partagé pour toute la ligne
@@ -27,6 +28,7 @@ interface SagaDecrypted {
   slug: string;
   description?: string;
   auteur: string;
+  userId: number;
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   createdAt?: Date;
   updatedAt?: Date;
@@ -41,6 +43,7 @@ class Saga extends Model<SagaAttributes, SagaCreationAttributes>
   public slug!: string; // Stocké chiffré
   public description?: string; // Stocké chiffré
   public auteur!: string;
+  public userId!: number;
   public statut!: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   public iv!: string;
   public tag!: string;
@@ -77,6 +80,16 @@ Saga.init(
     auteur: {
       type: DataTypes.STRING(255),
       allowNull: false,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     statut: {
       type: DataTypes.ENUM('brouillon', 'en_cours', 'terminee', 'publiee'),

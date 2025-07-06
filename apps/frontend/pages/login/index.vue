@@ -106,7 +106,6 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { AuthService } from '~/services/auth.service'
 
 // Métadonnées de la page
 useHead({
@@ -121,20 +120,21 @@ definePageMeta({
   auth: false
 })
 
+// Utiliser le composable d'authentification
+const { login, isLoading, lastError, isLoggedIn } = useAuth()
+
 // État du formulaire
 const form = reactive({
   email: '',
   password: ''
 })
 
-const isLoading = ref(false)
 const error = ref(null)
 const showPassword = ref(false)
 
 // Fonction de connexion
 const handleLogin = async () => {
   try {
-    isLoading.value = true
     error.value = null
 
     // Validation basique
@@ -143,34 +143,24 @@ const handleLogin = async () => {
       return
     }
 
-    // Tentative de connexion directe avec l'API backend
-    const response = await AuthService.login({
+    // Utiliser la fonction login du composable
+    await login({
       email: form.email,
       password: form.password
     })
-
-    // Stocker le token et les informations utilisateur
-    const token = useCookie('auth-token')
-    const user = useCookie('auth-user')
-    
-    token.value = response.token
-    user.value = response.user
 
     // Redirection vers le dashboard
     await navigateTo('/dashboard')
     
   } catch (err) {
     console.error('Erreur de connexion:', err)
-    error.value = err.data?.message || 'Email ou mot de passe incorrect'
-  } finally {
-    isLoading.value = false
+    error.value = err.message || 'Email ou mot de passe incorrect'
   }
 }
 
 // Rediriger si déjà connecté
 onMounted(() => {
-  const token = useCookie('auth-token')
-  if (token.value) {
+  if (isLoggedIn.value) {
     navigateTo('/dashboard')
   }
 })

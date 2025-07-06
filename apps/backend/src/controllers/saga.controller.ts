@@ -1,22 +1,16 @@
 import { Request, Response } from 'express';
 import { SagaService } from '../services/saga.service.js';
+import { ResponseUtil } from '../utils/response.util.js';
 
 export class SagaController {
   // Récupérer toutes les sagas
   public static async getAllSagas(req: Request, res: Response): Promise<void> {
     try {
       const sagas = await SagaService.getAllSagas();
-      res.status(200).json({
-        success: true,
-        data: sagas,
-        message: 'Sagas récupérées avec succès'
-      });
+      ResponseUtil.success(res, sagas, 'Sagas récupérées avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération des sagas:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération des sagas'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération des sagas');
     }
   }
 
@@ -26,34 +20,21 @@ export class SagaController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'ID invalide'
-        });
+        ResponseUtil.error(res, 'ID invalide', 400);
         return;
       }
 
       const saga = await SagaService.getSagaById(id);
       
       if (!saga) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        data: saga,
-        message: 'Saga récupérée avec succès'
-      });
+      ResponseUtil.success(res, saga, 'Saga récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération de la saga');
     }
   }
 
@@ -65,24 +46,14 @@ export class SagaController {
       const saga = await SagaService.getSagaByUuid(uuid);
       
       if (!saga) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        data: saga,
-        message: 'Saga récupérée avec succès'
-      });
+      ResponseUtil.success(res, saga, 'Saga récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération de la saga');
     }
   }
 
@@ -94,24 +65,14 @@ export class SagaController {
       const saga = await SagaService.getSagaBySlug(slug);
       
       if (!saga) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        data: saga,
-        message: 'Saga récupérée avec succès'
-      });
+      ResponseUtil.success(res, saga, 'Saga récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération de la saga');
     }
   }
 
@@ -127,24 +88,14 @@ export class SagaController {
       const saga = await SagaService.getSagaByIdOrUuidOrSlug(searchValue);
       
       if (!saga) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        data: saga,
-        message: 'Saga récupérée avec succès'
-      });
+      ResponseUtil.success(res, saga, 'Saga récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération de la saga');
     }
   }
 
@@ -155,17 +106,28 @@ export class SagaController {
       
       const sagas = await SagaService.getSagasByAuteur(auteur);
       
-      res.status(200).json({
-        success: true,
-        data: sagas,
-        message: `Sagas de l'auteur ${auteur} récupérées avec succès`
-      });
+      ResponseUtil.success(res, sagas, `Sagas de l'auteur ${auteur} récupérées avec succès`);
     } catch (error) {
       console.error('Erreur lors de la récupération des sagas par auteur:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération des sagas par auteur'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération des sagas par auteur');
+    }
+  }
+
+  // Récupérer les sagas par userId
+  public static async getSagasByUserId(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        ResponseUtil.error(res, 'ID utilisateur invalide', 400);
+        return;
+      }
+      
+      const sagas = await SagaService.getSagasByUserId(userId);
+      ResponseUtil.success(res, sagas, `Sagas de l'utilisateur ${userId} récupérées avec succès`);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des sagas par userId:', error);
+      ResponseUtil.handleError(res, error, 'la récupération des sagas par userId');
     }
   }
 
@@ -175,72 +137,38 @@ export class SagaController {
       const { statut } = req.params;
       
       if (!['brouillon', 'en_cours', 'terminee', 'publiee'].includes(statut)) {
-        res.status(400).json({
-          success: false,
-          message: 'Statut invalide'
-        });
+        ResponseUtil.error(res, 'Statut invalide', 400);
         return;
       }
       
       const sagas = await SagaService.getSagasByStatut(statut as 'brouillon' | 'en_cours' | 'terminee' | 'publiee');
-      
-      res.status(200).json({
-        success: true,
-        data: sagas,
-        message: `Sagas avec le statut ${statut} récupérées avec succès`
-      });
+      ResponseUtil.success(res, sagas, `Sagas avec le statut ${statut} récupérées avec succès`);
     } catch (error) {
       console.error('Erreur lors de la récupération des sagas par statut:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la récupération des sagas par statut'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération des sagas par statut');
     }
   }
 
   // Créer une nouvelle saga
   public static async createSaga(req: Request, res: Response): Promise<void> {
     try {
-      const { titre, description, auteur, statut } = req.body;
+      const { titre, description, auteur, statut, userId } = req.body;
       
-      // Validation des données requises
       if (!titre || !auteur) {
-        res.status(400).json({
-          success: false,
-          message: 'Le titre et l\'auteur sont requis'
-        });
+        ResponseUtil.error(res, 'Titre et auteur sont requis', 400);
         return;
       }
-
-      // Validation du statut si fourni
+      
       if (statut && !['brouillon', 'en_cours', 'terminee', 'publiee'].includes(statut)) {
-        res.status(400).json({
-          success: false,
-          message: 'Statut invalide'
-        });
+        ResponseUtil.error(res, 'Statut invalide', 400);
         return;
       }
-
-      const sagaData = {
-        titre,
-        description,
-        auteur,
-        statut: statut || 'brouillon'
-      };
-
-      const saga = await SagaService.createSaga(sagaData);
-
-      res.status(201).json({
-        success: true,
-        data: saga,
-        message: 'Saga créée avec succès'
-      });
+      
+      const saga = await SagaService.createSaga({ titre, description, auteur, statut, userId });
+      ResponseUtil.created(res, saga, 'Saga créée avec succès');
     } catch (error) {
       console.error('Erreur lors de la création de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la création de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la création de la saga');
     }
   }
 
@@ -250,51 +178,28 @@ export class SagaController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'ID invalide'
-        });
+        ResponseUtil.error(res, 'ID invalide', 400);
         return;
       }
-
-      const { titre, description, auteur, statut } = req.body;
-
-      // Validation du statut si fourni
+      
+      const { titre, description, auteur, statut, userId } = req.body;
+      
       if (statut && !['brouillon', 'en_cours', 'terminee', 'publiee'].includes(statut)) {
-        res.status(400).json({
-          success: false,
-          message: 'Statut invalide'
-        });
+        ResponseUtil.error(res, 'Statut invalide', 400);
         return;
       }
-
-      const updateData: any = {};
-      if (titre) updateData.titre = titre;
-      if (description !== undefined) updateData.description = description;
-      if (auteur) updateData.auteur = auteur;
-      if (statut) updateData.statut = statut;
-
-      const saga = await SagaService.updateSaga(id, updateData);
-
+      
+      const saga = await SagaService.updateSaga(id, { titre, description, auteur, statut, userId });
+      
       if (!saga) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
-
-      res.status(200).json({
-        success: true,
-        data: saga,
-        message: 'Saga mise à jour avec succès'
-      });
+      
+      ResponseUtil.success(res, saga, 'Saga mise à jour avec succès');
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la mise à jour de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la mise à jour de la saga');
     }
   }
 
@@ -304,33 +209,21 @@ export class SagaController {
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
-        res.status(400).json({
-          success: false,
-          message: 'ID invalide'
-        });
+        ResponseUtil.error(res, 'ID invalide', 400);
         return;
       }
-
-      const deleted = await SagaService.deleteSaga(id);
-
-      if (!deleted) {
-        res.status(404).json({
-          success: false,
-          message: 'Saga non trouvée'
-        });
+      
+      const success = await SagaService.deleteSaga(id);
+      
+      if (!success) {
+        ResponseUtil.notFound(res, 'Saga non trouvée');
         return;
       }
-
-      res.status(200).json({
-        success: true,
-        message: 'Saga supprimée avec succès'
-      });
+      
+      ResponseUtil.success(res, null, 'Saga supprimée avec succès');
     } catch (error) {
       console.error('Erreur lors de la suppression de la saga:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la suppression de la saga'
-      });
+      ResponseUtil.handleError(res, error, 'la suppression de la saga');
     }
   }
 } 

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import Story from '../models/story.model.js';
 import { EncryptionService } from './encryption.service.js';
+import { SlugUtil } from '../utils/slug.util.js';
 
 export interface StoryInput {
   titre: string;
@@ -8,6 +9,7 @@ export interface StoryInput {
   auteur: string;
   statut?: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   userId: number;
+  sagaId?: number;
 }
 
 export interface StoryOutput {
@@ -21,6 +23,7 @@ export interface StoryOutput {
   userId: number;
   createdAt: Date;
   updatedAt: Date;
+  sagaId?: number;
 }
 
 // Interface pour les champs chiffrés de Story
@@ -39,7 +42,7 @@ export class StoryService {
       fromModel: (model: Story) => model.titre
     },
     slug: {
-      fromInput: (data: StoryInput) => this.generateSlug(data.titre),
+      fromInput: (data: StoryInput) => SlugUtil.generateSlug(data.titre),
       fromModel: (model: Story) => model.slug
     },
     description: {
@@ -49,20 +52,10 @@ export class StoryService {
     auteur: {
       fromInput: (data: StoryInput) => data.auteur || 'Auteur Inconnu',
       fromModel: (model: Story) => model.auteur || 'Auteur Inconnu'
-    }
+    },
   } as const;
 
-  // Fonction utilitaire pour générer un slug depuis un titre
-  private static generateSlug(titre: string): string {
-    return titre
-      .toLowerCase()
-      .normalize('NFD') // Décompose les caractères accentués
-      .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
-      .replace(/[^a-z0-9\s-]/g, '') // Garde seulement lettres, chiffres, espaces et tirets
-      .trim()
-      .replace(/\s+/g, '-') // Remplace les espaces par des tirets
-      .replace(/-+/g, '-'); // Évite les tirets multiples
-  }
+
 
   // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
   private static getFieldsToDecrypt(story: Story): StoryEncryptedFields {
@@ -133,6 +126,7 @@ export class StoryService {
         userId: story.userId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
+        sagaId: story.sagaId,
       };
     });
   }
@@ -164,6 +158,7 @@ export class StoryService {
       auteur: decryptedData.auteur,
       statut: story.statut,
       userId: story.userId,
+      sagaId: story.sagaId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -196,6 +191,7 @@ export class StoryService {
       auteur: decryptedData.auteur,
       statut: story.statut,
       userId: story.userId,
+      sagaId: story.sagaId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -227,6 +223,7 @@ export class StoryService {
             auteur: decryptedData.auteur,
             statut: story.statut,
             userId: story.userId,
+            sagaId: story.sagaId,
             createdAt: story.createdAt,
             updatedAt: story.updatedAt,
           };
@@ -283,6 +280,7 @@ export class StoryService {
         auteur: decryptedData.auteur,
         statut: story.statut,
         userId: story.userId,
+        sagaId: story.sagaId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
       };
@@ -316,6 +314,7 @@ export class StoryService {
         auteur: decryptedData.auteur,
         statut: story.statut,
         userId: story.userId,
+        sagaId: story.sagaId,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
       };
@@ -343,6 +342,7 @@ export class StoryService {
       iv,
       tag,
       userId: data.userId,
+      sagaId: data.sagaId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -356,6 +356,7 @@ export class StoryService {
       auteur: fieldsToEncrypt.auteur,
       statut: story.statut,
       userId: story.userId,
+      sagaId: story.sagaId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };
@@ -386,7 +387,8 @@ export class StoryService {
       description: data.description !== undefined ? data.description : currentDecryptedData.description,
       auteur: data.auteur || currentDecryptedData.auteur,
       statut: data.statut || story.statut,
-      userId: story.userId
+      userId: story.userId,
+      sagaId: data.sagaId || story.sagaId
     };
 
     const fieldsToEncrypt = this.getFieldsToEncrypt(newData);
@@ -406,6 +408,7 @@ export class StoryService {
       statut: newData.statut,
       iv,
       tag,
+      sagaId: newData.sagaId || story.sagaId
     });
 
     return {
@@ -417,6 +420,7 @@ export class StoryService {
       auteur: fieldsToEncrypt.auteur,
       statut: story.statut,
       userId: story.userId,
+      sagaId: story.sagaId,
       createdAt: story.createdAt,
       updatedAt: story.updatedAt,
     };

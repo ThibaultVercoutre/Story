@@ -6,4 +6,5 @@ export { ChapitreService } from './chapitre.service.js';
 export { MorceauTexteService } from './morceauTexte.service.js';
 export { SagaService } from './saga.service.js';
 export { StoryService } from './story.service.js';
-export { UserService } from './user.service.js'; 
+export { UserService } from './user.service.js';
+export { TestService } from './test.service.js'; 

@@ -4,6 +4,7 @@ import morceauTexteRoutes from './morceauTexte.routes.js';
 import sagaRoutes from './saga.routes.js';
 import storyRoutes from './story.routes.js';
 import authRoutes from './auth.routes.js';
+import testRoutes from './test.routes.js';
 import { ChapitreController } from '../controllers/chapitre.controller.js';
 
 const router = Router();
@@ -27,6 +28,9 @@ router.use('/chapitres', chapitreRoutes);
 
 // Routes des morceaux de texte
 router.use('/morceaux-texte', morceauTexteRoutes);
+
+// Routes de test de performance
+router.use('/test', testRoutes);
 
 // Routes pour les chapitres d'une story spécifique
 router.get('/stories/:storyId/chapitres', ChapitreController.getChapitresByStoryId);

@@ -79,9 +79,10 @@
               <!-- Select pour l'ajouter à une sage ou non -->
               <select
                 v-if="isOwner && story"
-                :value="story.sagaId ? story.sagaId.toString() : ''"
-                @change="(e) => updateSaga((e.target as HTMLSelectElement).value)"
+                v-model="selectedSagaId"
+                @change="updateSaga(selectedSagaId)"
                 :disabled="isUpdatingSaga"
+                data-saga-select
                 class="min-w-[120px] px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
               >
                 <option v-for="option in sagaOptions" :key="option.value" :value="option.value">
@@ -186,10 +187,66 @@
         </div>
       </div>
     </div>
+
+        <!-- Modal pour créer une saga -->
+    <UModal 
+      v-model:open="showSagaModal" 
+      title="Créer une nouvelle saga"
+      description="Ajoutez une nouvelle saga pour organiser vos histoires"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Titre de la saga *
+            </label>
+            <UInput
+              v-model="newSagaTitle"
+              placeholder="Entrez le titre de la saga"
+              :disabled="isCreatingSaga"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description (optionnel)
+            </label>
+            <UTextarea
+              v-model="newSagaDescription"
+              placeholder="Décrivez votre saga..."
+              :disabled="isCreatingSaga"
+              :rows="3"
+            />
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end space-x-3">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="cancelSagaCreation"
+            :disabled="isCreatingSaga"
+          >
+            Annuler
+          </UButton>
+          <UButton
+            color="primary"
+            @click="createSaga"
+            :loading="isCreatingSaga"
+            :disabled="!newSagaTitle.trim()"
+          >
+            Créer la saga
+          </UButton>
+        </div>
+      </template>
+    </UModal>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter, useHead, navigateTo } from 'nuxt/app'
 import { StoryService } from '~/services/story.service'
 import type { StoryOutput, SagaOutput } from '~/types/story.types'
@@ -221,6 +278,13 @@ const isUpdatingStatus = ref(false)
 const isUpdatingSaga = ref(false)
 const error = ref(false)
 
+// États pour la popup de création de saga
+const isCreatingSaga = ref(false)
+const showSagaModal = ref(false)
+const newSagaTitle = ref('')
+const newSagaDescription = ref('')
+const previousSagaId = ref('')
+
 // Computed pour vérifier si l'utilisateur possède l'histoire
 const isOwner = computed(() => {
   return user.value && story.value && user.value.id === story.value.userId
@@ -247,15 +311,27 @@ const statusOptions = Object.values(Statut).map(statut => ({
 // Récupérer les sagas disponibles
 const sagas = ref<SagaOutput[]>([])
 
+// Variable réactive pour la valeur du select
+const selectedSagaId = ref<string>('')
+
 // Options de saga disponibles (computed pour réactivité)
-const sagaOptions = computed(() => [
-  { label: 'Aucune saga', value: '' },
-  ...(Array.isArray(sagas.value) ? sagas.value.map(saga => ({
-    label: saga.titre,
-    value: saga.id.toString()
-  })) : []),
-  { label: 'Ajouter une saga', value: '0' },
-])
+const sagaOptions = computed(() => {
+  const options = [
+    { label: 'Aucune saga', value: '' },
+    ...(Array.isArray(sagas.value) ? sagas.value.map(saga => ({
+      label: saga.titre,
+      value: saga.id.toString()
+    })) : []),
+    { label: 'Ajouter une saga', value: 'NEW_SAGA' },
+  ]
+  // console.log('sagaOptions computed:', options)
+  return options
+})
+
+// Watcher pour synchroniser selectedSagaId avec story.sagaId
+watch(() => story.value?.sagaId, (newSagaId) => {
+  selectedSagaId.value = newSagaId ? newSagaId.toString() : ''
+})
 
 // Métadonnées de la page
 useHead({
@@ -331,19 +407,20 @@ const updateStatus = async (newStatus: string) => {
 // Fonction pour mettre à jour la saga de l'histoire
 const updateSaga = async (newSagaId: string) => {
   if (!story.value || !isOwner.value) return
+
+  // Sauvegarder la valeur précédente pour pouvoir revenir en arrière
+  previousSagaId.value = story.value.sagaId ? story.value.sagaId.toString() : ''
   
-  if (newSagaId === '0') {
-    // Logique pour créer une nouvelle saga
+  if (newSagaId === 'NEW_SAGA') {
+    // Ouvrir la popup pour créer une nouvelle saga
+    showSagaModal.value = true
+    
+    // Remettre immédiatement le select à sa valeur précédente
+    selectedSagaId.value = previousSagaId.value
     return
   }
 
-  if (newSagaId === '-1') {
-    // Logique pour supprimer la saga
-    SagaService.deleteSaga(story.value.sagaId?.toString() || '')
-    return
-  }
-  
-  isUpdatingSaga.value = true
+  // console.log('newSagaId', newSagaId)
   
   try {
     const updatedStory = await StoryService.updateStory(story.value.id, {
@@ -356,6 +433,63 @@ const updateSaga = async (newSagaId: string) => {
   } finally {
     isUpdatingSaga.value = false
   }
+}
+
+// Fonction pour créer une nouvelle saga
+const createSaga = async () => {
+  if (!newSagaTitle.value.trim() || !user.value) return
+
+  isCreatingSaga.value = true
+
+  try {
+    const newSaga = await SagaService.createSaga({
+      titre: newSagaTitle.value.trim(),
+      description: newSagaDescription.value.trim() || undefined,
+      auteur: user.value.nom,
+      userId: user.value.id
+    })
+
+    // Recharger les sagas
+    sagas.value = await SagaService.getSagasByUserId(user.value.id)
+    // console.log('Sagas rechargées après création:', sagas.value)
+
+    // Attacher l'histoire à la nouvelle saga
+    if (story.value) {
+      const updatedStory = await StoryService.updateStory(story.value.id, {
+        sagaId: newSaga.id
+      })
+      story.value = updatedStory
+    }
+
+    // Fermer la popup et réinitialiser les champs
+    showSagaModal.value = false
+    newSagaTitle.value = ''
+    newSagaDescription.value = ''
+    
+    // Optionnel : toast de succès
+    // console.log('Saga créée et associée avec succès')
+  } catch (error) {
+    console.error('Erreur lors de la création de la saga:', error)
+    // Fermer la popup en cas d'erreur
+    showSagaModal.value = false
+    newSagaTitle.value = ''
+    newSagaDescription.value = ''
+    
+    // Remettre le select à sa valeur précédente
+    selectedSagaId.value = previousSagaId.value
+  } finally {
+    isCreatingSaga.value = false
+  }
+}
+
+// Fonction pour annuler la création de saga
+const cancelSagaCreation = () => {
+  showSagaModal.value = false
+  newSagaTitle.value = ''
+  newSagaDescription.value = ''
+  
+  // Remettre le select à sa valeur précédente
+  selectedSagaId.value = previousSagaId.value
 }
 
 onMounted(async () => {
@@ -373,9 +507,9 @@ onMounted(async () => {
     // Charger les chapitres et sagas en parallèle
     const [chapitresData, sagasData] = await Promise.all([
       ChapitreService.getChapitresByStoryId(story.value?.id || ''),
-      user.value ? SagaService.getSagasByAuteur(user.value.nom) : Promise.resolve([])
+      user.value ? SagaService.getSagasByUserId(user.value.id) : Promise.resolve([])
     ])
-    
+
     // Assigner les données
     chapitres.value = Array.isArray(chapitresData) ? chapitresData : []
     sagas.value = Array.isArray(sagasData) ? sagasData : []
@@ -383,7 +517,10 @@ onMounted(async () => {
     // Charger la saga de l'histoire si elle existe
     if (story.value?.sagaId) {
       saga.value = await SagaService.getSagaById(story.value.sagaId.toString())
+      selectedSagaId.value = story.value?.sagaId ? story.value.sagaId.toString() : ''
     }
+
+
     
     // Marquer le chargement comme terminé
     isLoading.value = false

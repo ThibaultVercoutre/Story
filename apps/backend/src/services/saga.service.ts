@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Saga } from '../models/index.js';
 import { EncryptionService } from './encryption.service.js';
+import { SlugUtil } from '../utils/slug.util.js';
 
 export interface SagaInput {
   titre: string;
   description?: string;
   auteur: string;
+  userId: number;
   statut?: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
 }
 
@@ -16,6 +18,7 @@ export interface SagaOutput {
   slug: string;
   description?: string;
   auteur: string;
+  userId: number;
   statut: 'brouillon' | 'en_cours' | 'terminee' | 'publiee';
   createdAt: Date;
   updatedAt: Date;
@@ -37,7 +40,7 @@ export class SagaService {
       fromModel: (model: Saga) => model.titre
     },
     slug: {
-      fromInput: (data: SagaInput) => this.generateSlug(data.titre),
+      fromInput: (data: SagaInput) => SlugUtil.generateSlug(data.titre),
       fromModel: (model: Saga) => model.slug
     },
     description: {
@@ -50,17 +53,7 @@ export class SagaService {
     }
   } as const;
 
-  // Fonction utilitaire pour générer un slug depuis un titre
-  private static generateSlug(titre: string): string {
-    return titre
-      .toLowerCase()
-      .normalize('NFD') // Décompose les caractères accentués
-      .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
-      .replace(/[^a-z0-9\s-]/g, '') // Garde seulement lettres, chiffres, espaces et tirets
-      .trim()
-      .replace(/\s+/g, '-') // Remplace les espaces par des tirets
-      .replace(/-+/g, '-'); // Évite les tirets multiples
-  }
+
 
   // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
   private static getFieldsToDecrypt(saga: Saga): SagaEncryptedFields {
@@ -127,6 +120,7 @@ export class SagaService {
         slug: decryptedData.slug,
         description: decryptedData.description,
         auteur: decryptedData.auteur,
+        userId: saga.userId,
         statut: saga.statut,
         createdAt: saga.createdAt,
         updatedAt: saga.updatedAt,
@@ -159,6 +153,7 @@ export class SagaService {
       slug: decryptedData.slug,
       description: decryptedData.description,
       auteur: decryptedData.auteur,
+      userId: saga.userId,
       statut: saga.statut,
       createdAt: saga.createdAt,
       updatedAt: saga.updatedAt,
@@ -190,6 +185,7 @@ export class SagaService {
       slug: decryptedData.slug,
       description: decryptedData.description,
       auteur: decryptedData.auteur,
+      userId: saga.userId,
       statut: saga.statut,
       createdAt: saga.createdAt,
       updatedAt: saga.updatedAt,
@@ -220,6 +216,7 @@ export class SagaService {
             slug: decryptedData.slug,
             description: decryptedData.description,
             auteur: decryptedData.auteur,
+            userId: saga.userId,
             statut: saga.statut,
             createdAt: saga.createdAt,
             updatedAt: saga.updatedAt,
@@ -250,6 +247,39 @@ export class SagaService {
     return this.getSagaBySlug(identifier as string);
   }
 
+  // Récupérer les sagas par userId
+  public static async getSagasByUserId(userId: number): Promise<SagaOutput[]> {
+    const sagas = await Saga.findAll({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return sagas.map((saga: InstanceType<typeof Saga>) => {
+      const fieldsToDecrypt = this.getFieldsToDecrypt(saga);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
+      const decryptedData = EncryptionService.decryptRowData(
+        fieldsRecord,
+        saga.uuid,
+        saga.iv,
+        saga.tag
+      );
+
+      return {
+        id: saga.id,
+        uuid: saga.uuid,
+        titre: decryptedData.titre,
+        slug: decryptedData.slug,
+        description: decryptedData.description,
+        auteur: decryptedData.auteur,
+        userId: saga.userId,
+        statut: saga.statut,
+        createdAt: saga.createdAt,
+        updatedAt: saga.updatedAt,
+      };
+    });
+  }
+
   // Récupérer les sagas par auteur
   public static async getSagasByAuteur(auteur: string): Promise<SagaOutput[]> {
     const sagas = await Saga.findAll({
@@ -275,6 +305,7 @@ export class SagaService {
         slug: decryptedData.slug,
         description: decryptedData.description,
         auteur: decryptedData.auteur,
+        userId: saga.userId,
         statut: saga.statut,
         createdAt: saga.createdAt,
         updatedAt: saga.updatedAt,
@@ -307,6 +338,7 @@ export class SagaService {
         slug: decryptedData.slug,
         description: decryptedData.description,
         auteur: decryptedData.auteur,
+        userId: saga.userId,
         statut: saga.statut,
         createdAt: saga.createdAt,
         updatedAt: saga.updatedAt,
@@ -332,6 +364,7 @@ export class SagaService {
       description: encryptedData.description,
       auteur: encryptedData.auteur,
       statut: data.statut || 'brouillon',
+      userId: data.userId,
       iv,
       tag,
       createdAt: new Date(),
@@ -345,6 +378,7 @@ export class SagaService {
       slug: fieldsToEncrypt.slug,
       description: fieldsToEncrypt.description,
       auteur: fieldsToEncrypt.auteur,
+      userId: saga.userId,
       statut: saga.statut,
       createdAt: saga.createdAt,
       updatedAt: saga.updatedAt,
@@ -375,6 +409,7 @@ export class SagaService {
       titre: data.titre || currentDecryptedData.titre,
       description: data.description !== undefined ? data.description : currentDecryptedData.description,
       auteur: data.auteur || currentDecryptedData.auteur,
+      userId: saga.userId,
       statut: data.statut || saga.statut,
     };
 
@@ -393,6 +428,7 @@ export class SagaService {
       description: encryptedData.description,
       auteur: encryptedData.auteur,
       statut: newData.statut,
+      userId: saga.userId,
       iv,
       tag,
     });
@@ -404,6 +440,7 @@ export class SagaService {
       slug: fieldsToEncrypt.slug,
       description: fieldsToEncrypt.description,
       auteur: fieldsToEncrypt.auteur,
+      userId: saga.userId,
       statut: saga.statut,
       createdAt: saga.createdAt,
       updatedAt: saga.updatedAt,

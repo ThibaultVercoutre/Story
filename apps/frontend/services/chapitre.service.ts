@@ -12,7 +12,8 @@ export class ChapitreService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des chapitres:', error);
       throw error;
@@ -28,7 +29,8 @@ export class ChapitreService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la récupération du chapitre:', error);
       throw error;
@@ -44,7 +46,8 @@ export class ChapitreService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la récupération du chapitre:', error);
       throw error;
@@ -66,7 +69,8 @@ export class ChapitreService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la création du chapitre:', error);
       throw error;
@@ -88,7 +92,8 @@ export class ChapitreService {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour du chapitre:', error);
       throw error;

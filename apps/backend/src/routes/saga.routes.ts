@@ -21,6 +21,9 @@ router.get('/find/:identifier', SagaController.getSagaByIdOrUuidOrSlug);
 // Récupérer les sagas par auteur
 router.get('/auteur/:auteur', SagaController.getSagasByAuteur);
 
+// Récupérer les sagas par userId
+router.get('/userId/:userId', SagaController.getSagasByUserId);
+
 // Récupérer les sagas par statut
 router.get('/statut/:statut', SagaController.getSagasByStatut);
 

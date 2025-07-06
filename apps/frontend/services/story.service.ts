@@ -10,7 +10,8 @@ export class StoryService {
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des stories:', error);
       throw error;
@@ -27,7 +28,8 @@ export class StoryService {
         }
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de la story:', error);
       throw error;
@@ -44,7 +46,8 @@ export class StoryService {
         }
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la récupération de la story:', error);
       throw error;
@@ -58,7 +61,8 @@ export class StoryService {
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des stories par auteur:', error);
       throw error;
@@ -72,7 +76,8 @@ export class StoryService {
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      return await response.json();
+      const result = await response.json();
+      return result.data || [];
     } catch (error) {
       console.error('Erreur lors de la récupération des stories par statut:', error);
       throw error;
@@ -95,7 +100,8 @@ export class StoryService {
         throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la création de la story:', error);
       throw error;
@@ -121,7 +127,8 @@ export class StoryService {
         throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la story:', error);
       throw error;

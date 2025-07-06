@@ -1,19 +1,17 @@
 import { Request, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { UserService, LoginCredentials, UserInput } from '../services/user.service.js';
+import { ResponseUtil } from '../utils/response.util.js';
+import { ValidationUtil } from '../utils/validation.util.js';
 
 export class AuthController {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-this-in-production';
+  private static readonly JWT_SECRET = process.env.JWT_SECRET;
   private static readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
   // Vérifier que la clé JWT est définie
   private static validateJWTSecret(): void {
-    console.log('🔍 JWT_SECRET value:', process.env.JWT_SECRET ? 'DEFINED' : 'UNDEFINED');
-    console.log('🔍 Final JWT_SECRET:', AuthController.JWT_SECRET ? 'DEFINED' : 'UNDEFINED');
-    
-    if (!process.env.JWT_SECRET) {
-      console.warn('⚠️  WARNING: JWT_SECRET not found in environment variables! Using fallback key.');
-      console.log('📝 Please create a .env file with JWT_SECRET variable.');
+    if (!this.JWT_SECRET) {
+      throw new Error('JWT_SECRET must be defined in environment variables for security. Please set JWT_SECRET in your .env file.');
     }
   }
 
@@ -26,19 +24,16 @@ export class AuthController {
       const { email, nom, password } = req.body;
 
       // Validation des données
-      if (!email || !nom || !password) {
-        res.status(400).json({
-          message: 'Tous les champs sont requis (email, nom, password)'
-        });
+      const validation = ValidationUtil.validateRegisterData({ email, nom, password });
+      if (!validation.isValid) {
+        ResponseUtil.validationError(res, validation.errors);
         return;
       }
 
       // Vérifier si l'email existe déjà
       const existingUser = await UserService.emailExists(email);
       if (existingUser) {
-        res.status(409).json({
-          message: 'Un utilisateur avec cet email existe déjà'
-        });
+        ResponseUtil.conflict(res, 'Un utilisateur avec cet email existe déjà');
         return;
       }
 
@@ -49,12 +44,11 @@ export class AuthController {
       // Générer le token JWT
       const token = jwt.sign(
         { userId: user.id, uuid: user.uuid },
-        AuthController.JWT_SECRET,
+        AuthController.JWT_SECRET!,
         { expiresIn: AuthController.JWT_EXPIRES_IN } as SignOptions
       );
 
-      res.status(201).json({
-        message: 'Utilisateur créé avec succès',
+      ResponseUtil.created(res, {
         token,
         user: {
           id: user.id,
@@ -62,12 +56,9 @@ export class AuthController {
           email: user.email,
           nom: user.nom
         }
-      });
+      }, 'Utilisateur créé avec succès');
     } catch (error) {
-      console.error('Erreur lors de l\'inscription:', error);
-      res.status(500).json({
-        message: 'Erreur interne du serveur'
-      });
+      ResponseUtil.handleError(res, error, 'l\'inscription');
     }
   }
 
@@ -80,10 +71,9 @@ export class AuthController {
       const { email, password } = req.body;
 
       // Validation des données
-      if (!email || !password) {
-        res.status(400).json({
-          message: 'Email et mot de passe requis'
-        });
+      const validation = ValidationUtil.validateLoginData({ email, password });
+      if (!validation.isValid) {
+        ResponseUtil.validationError(res, validation.errors);
         return;
       }
 
@@ -92,21 +82,18 @@ export class AuthController {
       const user = await UserService.authenticateUser(credentials);
 
       if (!user) {
-        res.status(401).json({
-          message: 'Email ou mot de passe incorrect'
-        });
+        ResponseUtil.unauthorized(res, 'Email ou mot de passe incorrect');
         return;
       }
 
       // Générer le token JWT
       const token = jwt.sign(
         { userId: user.id, uuid: user.uuid },
-        AuthController.JWT_SECRET,
+        AuthController.JWT_SECRET!,
         { expiresIn: AuthController.JWT_EXPIRES_IN } as SignOptions
       );
 
-      res.json({
-        message: 'Connexion réussie',
+      ResponseUtil.success(res, {
         token,
         user: {
           id: user.id,
@@ -114,37 +101,25 @@ export class AuthController {
           email: user.email,
           nom: user.nom
         }
-      });
+      }, 'Connexion réussie');
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
-      res.status(500).json({
-        message: 'Erreur interne du serveur'
-      });
+      ResponseUtil.handleError(res, error, 'la connexion');
     }
   }
 
-  // Récupérer les informations de l'utilisateur connecté
+  // Récupérer l'utilisateur connecté
   public static async getUser(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user?.userId;
-
-      if (!userId) {
-        res.status(401).json({
-          message: 'Utilisateur non authentifié'
-        });
-        return;
-      }
-
+      const userId = (req as any).user.userId;
+      
       const user = await UserService.getUserById(userId);
-
+      
       if (!user) {
-        res.status(404).json({
-          message: 'Utilisateur non trouvé'
-        });
+        ResponseUtil.notFound(res, 'Utilisateur non trouvé');
         return;
       }
 
-      res.json({
+      ResponseUtil.success(res, {
         user: {
           id: user.id,
           uuid: user.uuid,
@@ -153,51 +128,45 @@ export class AuthController {
         }
       });
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-      res.status(500).json({
-        message: 'Erreur interne du serveur'
-      });
+      ResponseUtil.handleError(res, error, 'la récupération de l\'utilisateur');
     }
   }
 
-  // Déconnexion (côté client principalement)
+  // Déconnexion
   public static async logout(req: Request, res: Response): Promise<void> {
     try {
-      // Pour l'instant, la déconnexion est gérée côté client
-      // On pourrait ajouter une blacklist de tokens ici si nécessaire
-      res.json({
-        message: 'Déconnexion réussie'
-      });
+      // En fait, avec JWT, on ne peut pas vraiment "déconnecter" côté serveur
+      // La déconnexion se fait côté client en supprimant le token
+      ResponseUtil.success(res, null, 'Déconnexion réussie');
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-      res.status(500).json({
-        message: 'Erreur interne du serveur'
-      });
+      ResponseUtil.handleError(res, error, 'la déconnexion');
     }
   }
 
   // Middleware pour vérifier le token JWT
   public static authenticateToken(req: Request, res: Response, next: Function): void {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    try {
+      AuthController.validateJWTSecret();
+      
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) {
-      res.status(401).json({
-        message: 'Token d\'accès requis'
-      });
-      return;
-    }
-
-    jwt.verify(token, AuthController.JWT_SECRET, (err: any, user: any) => {
-      if (err) {
-        res.status(403).json({
-          message: 'Token invalide'
-        });
+      if (!token) {
+        ResponseUtil.unauthorized(res, 'Token d\'accès requis');
         return;
       }
 
-      (req as any).user = user;
-      next();
-    });
+      jwt.verify(token, AuthController.JWT_SECRET!, (err: any, user: any) => {
+        if (err) {
+          ResponseUtil.forbidden(res, 'Token invalide');
+          return;
+        }
+
+        (req as any).user = user;
+        next();
+      });
+    } catch (error) {
+      ResponseUtil.handleError(res, error, 'la vérification du token');
+    }
   }
 } 

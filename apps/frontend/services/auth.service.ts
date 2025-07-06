@@ -10,13 +10,16 @@ interface LoginData {
 }
 
 interface AuthResponse {
+  success: boolean
   message: string
-  token: string
-  user: {
-    id: number
-    uuid: string
-    email: string
-    nom: string
+  data: {
+    token: string
+    user: {
+      id: number
+      uuid: string
+      email: string
+      nom: string
+    }
   }
 }
 
@@ -47,13 +50,13 @@ export class AuthService {
     })
   }
 
-  static async logout(): Promise<{ message: string }> {
+  static async logout(): Promise<{ success: boolean; message: string }> {
     return await $fetch(`${this.getApiBase()}/auth/logout`, {
       method: 'POST'
     })
   }
 
-  static async getUser(): Promise<{ user: User }> {
+  static async getUser(): Promise<{ success: boolean; data: { user: User } }> {
     const token = useCookie('auth-token').value
     if (!token) {
       throw new Error('Token non trouvé')

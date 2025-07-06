@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Chapitre } from '../models/index.js';
 import { EncryptionService } from './encryption.service.js';
+import { SlugUtil } from '../utils/slug.util.js';
 
 export interface ChapitreInput {
   titre: string;
@@ -33,22 +34,12 @@ export class ChapitreService {
       fromModel: (model: Chapitre) => model.titre
     },
     slug: {
-      fromInput: (data: ChapitreInput) => this.generateSlug(data.titre),
+      fromInput: (data: ChapitreInput) => SlugUtil.generateSlug(data.titre),
       fromModel: (model: Chapitre) => model.slug
     }
   } as const;
 
-  // Fonction utilitaire pour générer un slug depuis un titre
-  private static generateSlug(titre: string): string {
-    return titre
-      .toLowerCase()
-      .normalize('NFD') // Décompose les caractères accentués
-      .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
-      .replace(/[^a-z0-9\s-]/g, '') // Garde seulement lettres, chiffres, espaces et tirets
-      .trim()
-      .replace(/\s+/g, '-') // Remplace les espaces par des tirets
-      .replace(/-+/g, '-'); // Évite les tirets multiples
-  }
+
 
   // Fonction générique pour extraire les champs à déchiffrer depuis le modèle
   private static getFieldsToDecrypt(chapitre: Chapitre): ChapitreEncryptedFields {

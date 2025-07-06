@@ -267,7 +267,7 @@ onMounted(async () => {
   try {
     const stories = await StoryService.getStories()
     // Prendre les 6 histoires les plus récentes
-    recentStories.value = stories.slice(0, 6)
+    recentStories.value = Array.isArray(stories) ? stories.slice(0, 6) : []
   } catch (error) {
     console.error('Erreur lors du chargement des histoires:', error)
   } finally {

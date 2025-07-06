@@ -21,6 +21,18 @@ Story.belongsTo(Saga, {
   as: 'saga',
 });
 
+// Un utilisateur a plusieurs sagas
+User.hasMany(Saga, {
+  foreignKey: 'userId',
+  as: 'sagas',
+  onDelete: 'CASCADE',
+});
+
+Saga.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
 // Une story a plusieurs chapitres
 Story.hasMany(Chapitre, {
   foreignKey: 'storyId',

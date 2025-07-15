@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { Op } from 'sequelize';
 import { MorceauTexte } from '../models/index.js';
 import { TypeMorceauTexte } from '../models/morceauTexte.model.js';
 import { EncryptionService } from './encryption.service.js';
@@ -167,37 +168,100 @@ export class MorceauTexteService {
     };
   }
 
-  // Créer un nouveau morceau de texte
-  public static async createMorceauTexte(data: MorceauTexteInput): Promise<MorceauTexteOutput> {
-    const uuid = uuidv4();
-    const fieldsToEncrypt = this.getFieldsToEncrypt(data);
-    const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
-    
-    const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
-      fieldsRecord,
-      uuid
-    );
-
-    const morceau = await MorceauTexte.create({
-      uuid,
-      chapitreId: data.chapitreId,
-      type: data.type,
-      contenu: encryptedData.contenu,
-      ordre: data.ordre,
-      iv,
-      tag,
+  // Décaler les ordres vers le haut pour faire de la place (avec gestion de la contrainte unique)
+  private static async shiftOrdersUp(chapitreId: number, fromOrder: number, transaction?: any): Promise<void> {
+    // Utiliser des valeurs temporaires très élevées pour éviter les conflits d'unicité
+    const morceauxToShift = await MorceauTexte.findAll({
+      where: {
+        chapitreId,
+        ordre: { [Op.gte]: fromOrder }
+      },
+      order: [['ordre', 'DESC']], // Commencer par les ordres les plus élevés
+      transaction
     });
 
-    return {
-      id: morceau.id,
-      uuid: morceau.uuid,
-      chapitreId: morceau.chapitreId,
-      type: morceau.type,
-      contenu: fieldsToEncrypt.contenu,
-      ordre: morceau.ordre,
-      createdAt: morceau.createdAt,
-      updatedAt: morceau.updatedAt,
-    };
+    // Première passe : mettre des valeurs temporaires très élevées (évite validation min: 1)
+    for (const morceau of morceauxToShift) {
+      const tempOrder = morceau.ordre + 10000; // Valeurs temporaires élevées
+      await morceau.update({ ordre: tempOrder }, { transaction });
+    }
+
+    // Deuxième passe : remettre les bonnes valeurs décalées
+    for (const morceau of morceauxToShift) {
+      const newOrder = morceau.ordre - 10000 + 1; // Décaler de +1
+      await morceau.update({ ordre: newOrder }, { transaction });
+    }
+  }
+
+  // Décaler les ordres vers le bas pour combler un trou (avec gestion de la contrainte unique)
+  private static async shiftOrdersDown(chapitreId: number, fromOrder: number, transaction?: any): Promise<void> {
+    // Utiliser des valeurs temporaires très élevées pour éviter les conflits d'unicité
+    const morceauxToShift = await MorceauTexte.findAll({
+      where: {
+        chapitreId,
+        ordre: { [Op.gt]: fromOrder }
+      },
+      order: [['ordre', 'ASC']], // Commencer par les ordres les plus bas
+      transaction
+    });
+
+    // Première passe : mettre des valeurs temporaires très élevées (évite validation min: 1)
+    for (const morceau of morceauxToShift) {
+      const tempOrder = morceau.ordre + 10000; // Valeurs temporaires élevées
+      await morceau.update({ ordre: tempOrder }, { transaction });
+    }
+
+    // Deuxième passe : remettre les bonnes valeurs décalées
+    for (const morceau of morceauxToShift) {
+      const newOrder = morceau.ordre - 10000 - 1; // Décaler de -1
+      await morceau.update({ ordre: newOrder }, { transaction });
+    }
+  }
+
+  // Créer un nouveau morceau de texte avec gestion automatique des ordres
+  public static async createMorceauTexte(data: MorceauTexteInput): Promise<MorceauTexteOutput> {
+    // Utiliser une transaction pour s'assurer de la cohérence
+    const transaction = await MorceauTexte.sequelize!.transaction();
+    
+    try {
+      // Décaler tous les morceaux avec un ordre >= à l'ordre d'insertion
+      await this.shiftOrdersUp(data.chapitreId, data.ordre, transaction);
+
+      const uuid = uuidv4();
+      const fieldsToEncrypt = this.getFieldsToEncrypt(data);
+      const fieldsRecord = this.fieldsToRecord(fieldsToEncrypt);
+      
+      const { encryptedData, iv, tag } = EncryptionService.encryptRowData(
+        fieldsRecord,
+        uuid
+      );
+
+      const morceau = await MorceauTexte.create({
+        uuid,
+        chapitreId: data.chapitreId,
+        type: data.type,
+        contenu: encryptedData.contenu,
+        ordre: data.ordre,
+        iv,
+        tag,
+      }, { transaction });
+
+      await transaction.commit();
+
+      return {
+        id: morceau.id,
+        uuid: morceau.uuid,
+        chapitreId: morceau.chapitreId,
+        type: morceau.type,
+        contenu: fieldsToEncrypt.contenu,
+        ordre: morceau.ordre,
+        createdAt: morceau.createdAt,
+        updatedAt: morceau.updatedAt,
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   // Mettre à jour un morceau de texte
@@ -257,15 +321,33 @@ export class MorceauTexteService {
     };
   }
 
-  // Supprimer un morceau de texte
+  // Supprimer un morceau de texte avec gestion automatique des ordres
   public static async deleteMorceauTexte(id: number): Promise<boolean> {
-    const morceau = await MorceauTexte.findByPk(id);
+    // Utiliser une transaction pour s'assurer de la cohérence
+    const transaction = await MorceauTexte.sequelize!.transaction();
     
-    if (!morceau) {
-      return false;
-    }
+    try {
+      const morceau = await MorceauTexte.findByPk(id, { transaction });
+      
+      if (!morceau) {
+        await transaction.rollback();
+        return false;
+      }
 
-    await morceau.destroy();
-    return true;
+      const chapitreId = morceau.chapitreId;
+      const ordre = morceau.ordre;
+
+      // Supprimer le morceau
+      await morceau.destroy({ transaction });
+
+      // Décaler tous les morceaux suivants vers le bas
+      await this.shiftOrdersDown(chapitreId, ordre, transaction);
+
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 } 

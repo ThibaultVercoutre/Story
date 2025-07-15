@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm install)",
+      "Bash(npm ls:*)",
+      "Bash(npm run test:*)",
+      "Bash(rm:*)",
+      "Bash(timeout 10 npm run test:ui)"
+    ],
+    "deny": []
+  }
+}

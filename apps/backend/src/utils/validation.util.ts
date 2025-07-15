@@ -47,7 +47,7 @@ export class ValidationUtil {
   /**
    * Valide les données d'inscription
    */
-  static validateRegisterData(data: { email?: string; nom?: string; password?: string }): ValidationResult {
+  static validateRegisterData(data: { email?: string; nom?: string; password?: string; confirmPassword?: string }): ValidationResult {
     const errors: Record<string, string> = {};
     
     if (!data.email) {
@@ -65,6 +65,11 @@ export class ValidationUtil {
     const passwordValidation = ValidationUtil.validatePassword(data.password || '');
     if (!passwordValidation.isValid) {
       Object.assign(errors, passwordValidation.errors);
+    }
+    
+    // Vérifier que les mots de passe correspondent
+    if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+      errors.confirmPassword = 'Les mots de passe ne correspondent pas';
     }
     
     return {

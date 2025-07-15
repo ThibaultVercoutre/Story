@@ -72,10 +72,19 @@
             </UButton>
           </div>
 
-          <div class="flex-1 flex justify-center">
+          <div class="flex-1 flex justify-center space-x-4">
             <UBadge color="primary" variant="soft" class="px-4 py-2 text-center">
               {{ chapitre?.numero }} / {{ totalChapters }}
             </UBadge>
+            <UButton 
+              color="primary" 
+              variant="outline"
+              icon="i-heroicons-pencil"
+              @click="navigateToEdit"
+              class="cursor-pointer"
+            >
+              Modifier
+            </UButton>
           </div>
 
           <div class="flex-1 flex justify-center">
@@ -214,6 +223,11 @@ useHead({
 // Fonction pour naviguer vers un chapitre
 const navigateToChapter = (chapter: Chapitre) => {
   navigateTo(`/dashboard/stories/${storySlug}/${chapter.id}`)
+}
+
+// Fonction pour naviguer vers la page d'édition
+const navigateToEdit = () => {
+  navigateTo(`/dashboard/stories/${storySlug}/${chapitre.value?.id}/edit`)
 }
 
 // Fonction pour formater la date

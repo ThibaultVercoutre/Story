@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import { StoryService } from '../services/story.service.js';
 import { ResponseUtil } from '../utils/response.util.js';
+import { ValidationUtil } from '../utils/validation.util.js';
 
 export class StoryController {
   // GET /api/stories
   public static async getAllStories(req: Request, res: Response) {
     try {
       const stories = await StoryService.getAllStories();
-      ResponseUtil.success(res, stories, 'Stories récupérées avec succès');
+      ResponseUtil.success(res, stories, 'Histoires récupérées avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération des stories:', error);
-      ResponseUtil.handleError(res, error, 'la récupération des stories');
+      ResponseUtil.handleError(res, error, 'la récupération des histoires');
     }
   }
 
@@ -18,24 +19,27 @@ export class StoryController {
   public static async getStoryById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const numericId = parseInt(id, 10);
       
-      if (isNaN(numericId)) {
-        ResponseUtil.error(res, 'ID invalide', 400);
+      // Validation de l'ID
+      const idValidation = ValidationUtil.validateId(id);
+      if (!idValidation.isValid) {
+        ResponseUtil.validationError(res, idValidation.errors);
         return;
       }
+      
+      const numericId = parseInt(id, 10);
       
       const story = await StoryService.getStoryById(numericId);
       
       if (!story) {
-        ResponseUtil.notFound(res, 'Story non trouvée');
+        ResponseUtil.notFound(res, 'Histoire non trouvée');
         return;
       }
       
-      ResponseUtil.success(res, story, 'Story récupérée avec succès');
+      ResponseUtil.success(res, story, 'Histoire récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la story:', error);
-      ResponseUtil.handleError(res, error, 'la récupération de la story');
+      ResponseUtil.handleError(res, error, 'la récupération de l\'histoire');
     }
   }
 
@@ -46,14 +50,14 @@ export class StoryController {
       const story = await StoryService.getStoryByUuid(uuid);
       
       if (!story) {
-        ResponseUtil.notFound(res, 'Story non trouvée');
+        ResponseUtil.notFound(res, 'Histoire non trouvée');
         return;
       }
       
-      ResponseUtil.success(res, story, 'Story récupérée avec succès');
+      ResponseUtil.success(res, story, 'Histoire récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la story:', error);
-      ResponseUtil.handleError(res, error, 'la récupération de la story');
+      ResponseUtil.handleError(res, error, 'la récupération de l\'histoire');
     }
   }
 
@@ -69,14 +73,14 @@ export class StoryController {
       const story = await StoryService.getStoryByIdOrUuidOrSlug(searchIdentifier);
       
       if (!story) {
-        ResponseUtil.notFound(res, 'Story non trouvée');
+        ResponseUtil.notFound(res, 'Histoire non trouvée');
         return;
       }
       
-      ResponseUtil.success(res, story, 'Story récupérée avec succès');
+      ResponseUtil.success(res, story, 'Histoire récupérée avec succès');
     } catch (error) {
       console.error('Erreur lors de la récupération de la story:', error);
-      ResponseUtil.handleError(res, error, 'la récupération de la story');
+      ResponseUtil.handleError(res, error, 'la récupération de l\'histoire');
     }
   }
 
@@ -115,8 +119,10 @@ export class StoryController {
     try {
       const { titre, description, auteur, statut, userId, sagaId } = req.body;
       
-      if (!titre || !auteur) {
-        ResponseUtil.error(res, 'Titre et auteur sont requis', 400);
+      // Validation des données
+      const validationResult = ValidationUtil.validateStoryData({ titre, auteur, userId });
+      if (!validationResult.isValid) {
+        ResponseUtil.validationError(res, validationResult.errors);
         return;
       }
       
@@ -126,10 +132,10 @@ export class StoryController {
       }
       
       const story = await StoryService.createStory({ titre, description, auteur, statut, userId, sagaId });
-      ResponseUtil.created(res, story, 'Story créée avec succès');
+      ResponseUtil.created(res, story, 'Histoire créée avec succès');
     } catch (error) {
       console.error('Erreur lors de la création de la story:', error);
-      ResponseUtil.handleError(res, error, 'la création de la story');
+      ResponseUtil.handleError(res, error, 'la création de l\'histoire');
     }
   }
 
@@ -137,12 +143,15 @@ export class StoryController {
   public static async updateStory(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const numericId = parseInt(id, 10);
       
-      if (isNaN(numericId)) {
-        ResponseUtil.error(res, 'ID invalide', 400);
+      // Validation de l'ID
+      const idValidation = ValidationUtil.validateId(id);
+      if (!idValidation.isValid) {
+        ResponseUtil.validationError(res, idValidation.errors);
         return;
       }
+      
+      const numericId = parseInt(id, 10);
       
       const { titre, description, auteur, statut, userId, sagaId } = req.body;
       
@@ -154,14 +163,14 @@ export class StoryController {
       const story = await StoryService.updateStory(numericId, { titre, description, auteur, statut, userId, sagaId });
       
       if (!story) {
-        ResponseUtil.notFound(res, 'Story non trouvée');
+        ResponseUtil.notFound(res, 'Histoire non trouvée');
         return;
       }
       
-      ResponseUtil.success(res, story, 'Story mise à jour avec succès');
+      ResponseUtil.success(res, story, 'Histoire mise à jour avec succès');
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la story:', error);
-      ResponseUtil.handleError(res, error, 'la mise à jour de la story');
+      ResponseUtil.handleError(res, error, 'la mise à jour de l\'histoire');
     }
   }
 
@@ -169,24 +178,49 @@ export class StoryController {
   public static async deleteStory(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const numericId = parseInt(id, 10);
       
-      if (isNaN(numericId)) {
-        ResponseUtil.error(res, 'ID invalide', 400);
+      // Validation de l'ID
+      const idValidation = ValidationUtil.validateId(id);
+      if (!idValidation.isValid) {
+        ResponseUtil.validationError(res, idValidation.errors);
         return;
       }
+      
+      const numericId = parseInt(id, 10);
       
       const success = await StoryService.deleteStory(numericId);
       
       if (!success) {
-        ResponseUtil.notFound(res, 'Story non trouvée');
+        ResponseUtil.notFound(res, 'Histoire non trouvée');
         return;
       }
       
-      ResponseUtil.success(res, null, 'Story supprimée avec succès');
+      ResponseUtil.success(res, null, 'Histoire supprimée avec succès');
     } catch (error) {
       console.error('Erreur lors de la suppression de la story:', error);
-      ResponseUtil.handleError(res, error, 'la suppression de la story');
+      ResponseUtil.handleError(res, error, 'la suppression de l\'histoire');
+    }
+  }
+
+  // GET /api/stories/user/:userId
+  public static async getStoriesByUserId(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      
+      // Validation de l'ID utilisateur
+      const idValidation = ValidationUtil.validateId(userId);
+      if (!idValidation.isValid) {
+        ResponseUtil.validationError(res, idValidation.errors);
+        return;
+      }
+      
+      const numericUserId = parseInt(userId, 10);
+      const stories = await StoryService.getStoriesByUserId(numericUserId);
+      
+      ResponseUtil.success(res, stories, `Stories de l'utilisateur récupérées avec succès`);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des stories par utilisateur:', error);
+      ResponseUtil.handleError(res, error, 'la récupération des stories par utilisateur');
     }
   }
 } 

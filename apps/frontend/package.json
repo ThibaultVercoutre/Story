@@ -7,7 +7,14 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:coverage:analyze": "npm run test:coverage && tsx src/__tests__/coverage-analysis.ts",
+    "test:unit": "vitest --run --reporter=verbose",
+    "test:ci": "vitest --coverage --run --reporter=verbose"
   },
   "dependencies": {
     "@nuxt/content": "^3.6.3",
@@ -25,5 +32,13 @@
     "typescript": "^5.8.3",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@vue/test-utils": "^2.4.6",
+    "@vitest/coverage-v8": "^3.2.0",
+    "@vitest/ui": "^3.2.0",
+    "happy-dom": "^14.12.0",
+    "vitest": "^3.2.0",
+    "tsx": "^4.20.3"
   }
 }

@@ -32,4 +32,4 @@ sequelize.authenticate()
   })
   .catch((err: Error) => {
     console.error('❌ Impossible de se connecter à la base de données:', err);
-  }); 
+  });

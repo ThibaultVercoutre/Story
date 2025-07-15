@@ -71,7 +71,7 @@ export class MorceauTexteController {
     try {
       const { chapitreId, type, contenu, ordre } = req.body;
       
-      if (!chapitreId || !type || !contenu || !ordre) {
+      if (!chapitreId || !type || !contenu || ordre === undefined || ordre === null) {
         ResponseUtil.error(res, 'ChapitreId, type, contenu et ordre sont requis', 400);
         return;
       }

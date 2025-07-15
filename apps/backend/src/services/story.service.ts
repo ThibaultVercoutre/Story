@@ -321,6 +321,40 @@ export class StoryService {
     });
   }
 
+  // Récupérer les stories par utilisateur
+  public static async getStoriesByUserId(userId: number): Promise<StoryOutput[]> {
+    const stories = await Story.findAll({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return stories.map((story: InstanceType<typeof Story>) => {
+      const fieldsToDecrypt = this.getFieldsToDecrypt(story);
+      const fieldsRecord = this.fieldsToRecord(fieldsToDecrypt);
+
+      const decryptedData = EncryptionService.decryptRowData(
+        fieldsRecord,
+        story.uuid,
+        story.iv,
+        story.tag
+      );
+
+      return {
+        id: story.id,
+        uuid: story.uuid,
+        titre: decryptedData.titre,
+        slug: decryptedData.slug,
+        description: decryptedData.description,
+        auteur: decryptedData.auteur,
+        statut: story.statut,
+        userId: story.userId,
+        sagaId: story.sagaId,
+        createdAt: story.createdAt,
+        updatedAt: story.updatedAt,
+      };
+    });
+  }
+
   // Créer une nouvelle story
   public static async createStory(data: StoryInput): Promise<StoryOutput> {
     const uuid = uuidv4();

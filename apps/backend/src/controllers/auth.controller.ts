@@ -21,10 +21,10 @@ export class AuthController {
       // Vérifier la configuration JWT
       AuthController.validateJWTSecret();
       
-      const { email, nom, password } = req.body;
+      const { email, nom, password, confirmPassword } = req.body;
 
       // Validation des données
-      const validation = ValidationUtil.validateRegisterData({ email, nom, password });
+      const validation = ValidationUtil.validateRegisterData({ email, nom, password, confirmPassword });
       if (!validation.isValid) {
         ResponseUtil.validationError(res, validation.errors);
         return;
